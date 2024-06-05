@@ -17,9 +17,10 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+			concatenate_all_notes();
+			new Notice('Fichier de référence créé !');
 		});
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
@@ -131,4 +132,63 @@ class SampleSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 	}
+}
+
+async function concatenate_all_notes(){
+	const vault = app.vault;  
+
+	const files = await vault.getMarkdownFiles();  
+	//const test = await vault.getFileByPath();
+	const test2 = await vault.getRoot();
+
+	const meta_folder = `---
+	_filters: []
+	_contexts: []
+	_links: []
+	_sort:
+	field: rank
+	`;
+
+	const meta_file = `---\nid`;
+	const nb_files = files.length;
+
+	let content = '';  
+	let notes = new Array(nb_files).fill(0);
+
+
+	console.log("Nb files :",nb_files);
+	for (let i = nb_files-1; i > -1; i--)
+		{  
+		//console.log(files[i]);
+		let file = files[i];
+		let data = await vault.read(file);
+		if (data.startsWith(meta_file))
+		{
+			//console.log(file.basename);
+			let match = data.match(/---\s*id:\s*"(\d+)"\s*---/);
+			if (match)
+			{
+				let id = parseInt(match[1]);
+				notes[id] = file
+			}
+		}  
+	}
+
+	for (let j = 0; j < nb_files; j++){
+		let file = notes[j];
+		console.log(file);
+		if (file != 0) {
+			let data = await vault.read(file);
+
+			let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
+			let data_wt_meta = match ? match[1] : null; // Add null check for match
+
+			content += `## ${file.basename}\n${data_wt_meta}\n\n`;
+			console.log(content);
+		}
+	}
+
+	vault.create("Référence.md",content);
+
+
 }
