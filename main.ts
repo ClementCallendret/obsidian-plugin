@@ -32,6 +32,12 @@ export default class MyPlugin extends Plugin {
 			new Notice('Fichier créé !');
 		});
 
+		const ribbonIconE3 = this.addRibbonIcon('folder-plus', 'Créer un nouveau dossier', (evt: MouseEvent) => {
+			create_folder();
+
+			new Notice('Dossier créé !');
+		});
+
 		// Perform additional things with the ribbon
 		ribbonIconE1.addClass('my-plugin-ribbon-class');
 
@@ -150,15 +156,6 @@ async function concatenate_all_notes(){
 	const vault = app.vault;  
 
 	const files = await vault.getMarkdownFiles();  
-	const test = await vault.getFiles();
-	console.log(test);
-	const meta_folder = `---
-	_filters: []
-	_contexts: []
-	_links: []
-	_sort:
-	field: rank
-	`;
 
 	const meta_file = `---\nid`;
 	const nb_files = files.length;
@@ -166,7 +163,7 @@ async function concatenate_all_notes(){
 	let content = '';  
 	let notes = new Array(nb_files).fill(0);
 
-
+	console.log("Files : ",files);
 	for (let i = nb_files-1; i > -1; i--)
 		{  
 		let file = files[i];
@@ -211,13 +208,15 @@ function read_database(){
 	console.log("READ DATABASE")
 }
 
+
+//Create a new file with the next number in the title from the current file
 async function create_file(){
 	const activeFile = this.app.workspace.getActiveFile();
     if (activeFile) {
 		const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
 		const digits = await get_next_number(folderPath);
 		const newFilePath = `${folderPath}/${digits} Titre.md`;
-		await this.app.vault.create(newFilePath, '');
+		await this.app.vault.create(newFilePath, '---\nid: 1 \nordre: 1 \n---');
 		this.app.workspace.openLinkText(newFilePath, '', true);
 
     }
@@ -228,7 +227,7 @@ async function get_next_number(parent_folder_path: string):Promise<string>{
 	let result = "";
 	let last_number = 0;
 	const files = await app.vault.getMarkdownFiles();
-	console.log("Files : ",files);  
+	//console.log("Files : ",files);  
 	
 
 	for (let i = 0; i < files.length; i++){
@@ -245,27 +244,43 @@ async function get_next_number(parent_folder_path: string):Promise<string>{
 					last_number = number;
 				}
 			}
-			//if first note 
-			if (last_number == 0){
-
-
-			}
-			//if not first note = other note already created
-			else{
+			//if not first note 
+			if (last_number != 0){
 				let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
 				if (match1){
-					result = match1[1];
+					result = match1[1].slice(0,-1);
 				}
 			}
-
-
-
-
 		}
+	}
+	if (last_number == 0){
+		let parent_folder = app.vault.getFolderByPath(parent_folder_path); 
+		console.log("parent folder : ",parent_folder);
+		let match3 = parent_folder?.name.match(/^(.*?)\s[a-zA-Z]/);
+		if (match3){
+			result = match3[1];
+		}
+
 	}
 	console.log("Result : ",result);
 	console.log("Last number : ",last_number);
-	result = result.slice(0,-1) + (last_number + 1).toString();
+	result = result + (last_number + 1).toString();
 	console.log("Result Final : ",result);
 	return result;
+}
+
+//Create a new folder and the first note in it 
+async function create_folder(){
+	const activeFile = this.app.workspace.getActiveFile();
+	if (activeFile) {
+		const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
+		const digits = await get_next_number(folderPath);
+		const newFolderPath = `${folderPath}/${digits}. Fichier`;
+		this.app.vault.createFolder(newFolderPath);
+		
+		const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
+		await this.app.vault.create(newFilePath, '---\nid: 1 \nordre: 1 \n---');
+		this.app.workspace.openLinkText(newFilePath, '', true);
+
+	}
 }
