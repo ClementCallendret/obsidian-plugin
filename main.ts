@@ -1,5 +1,6 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-
+import { readFileSync } from "fs";
+import MDBReader from "mdb-reader";
 // Remember to rename these classes and interfaces!
 
 interface MyPluginSettings {
@@ -17,17 +18,28 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', (evt: MouseEvent) => {
+		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			concatenate_all_notes();
 			new Notice('Fichier de référence créé !');
+		
 		});
+
+
+		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', (evt: MouseEvent) => {
+			create_file();
+
+			new Notice('Fichier créé !');
+		});
+
 		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		ribbonIconE1.addClass('my-plugin-ribbon-class');
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
+
+
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
@@ -138,9 +150,8 @@ async function concatenate_all_notes(){
 	const vault = app.vault;  
 
 	const files = await vault.getMarkdownFiles();  
-	//const test = await vault.getFileByPath();
-	const test2 = await vault.getRoot();
-
+	const test = await vault.getFiles();
+	console.log(test);
 	const meta_folder = `---
 	_filters: []
 	_contexts: []
@@ -156,15 +167,12 @@ async function concatenate_all_notes(){
 	let notes = new Array(nb_files).fill(0);
 
 
-	console.log("Nb files :",nb_files);
 	for (let i = nb_files-1; i > -1; i--)
 		{  
-		//console.log(files[i]);
 		let file = files[i];
 		let data = await vault.read(file);
 		if (data.startsWith(meta_file))
 		{
-			//console.log(file.basename);
 			let match = data.match(/---\s*id:\s*"(\d+)"\s*---/);
 			if (match)
 			{
@@ -176,7 +184,6 @@ async function concatenate_all_notes(){
 
 	for (let j = 0; j < nb_files; j++){
 		let file = notes[j];
-		console.log(file);
 		if (file != 0) {
 			let data = await vault.read(file);
 
@@ -184,11 +191,81 @@ async function concatenate_all_notes(){
 			let data_wt_meta = match ? match[1] : null; // Add null check for match
 
 			content += `## ${file.basename}\n${data_wt_meta}\n\n`;
-			console.log(content);
 		}
 	}
 
 	vault.create("Référence.md",content);
 
 
+}
+
+function read_database(){
+	const buffer = readFileSync("Spaces.mdb");
+	const reader = new MDBReader(buffer);
+
+	reader.getTableNames(); // ['Cats', 'Dogs', 'Cars']
+
+	const table = reader.getTable("Cats");
+	table.getColumnNames(); // ['id', 'name', 'color']
+	table.getData(); // [{id: 5, name: 'Ashley', color: 'black'}, ...]
+	console.log("READ DATABASE")
+}
+
+async function create_file(){
+	const activeFile = this.app.workspace.getActiveFile();
+    if (activeFile) {
+		const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
+		const digits = await get_next_number(folderPath);
+		const newFilePath = `${folderPath}/${digits} Titre.md`;
+		await this.app.vault.create(newFilePath, '');
+		this.app.workspace.openLinkText(newFilePath, '', true);
+
+    }
+}
+
+async function get_next_number(parent_folder_path: string):Promise<string>{
+	console.log("Parent folder path : ",parent_folder_path);
+	let result = "";
+	let last_number = 0;
+	const files = await app.vault.getMarkdownFiles();
+	console.log("Files : ",files);  
+	
+
+	for (let i = 0; i < files.length; i++){
+		let file = files[i];
+		let file_path = file.path;
+		if (file_path.startsWith(parent_folder_path)){
+			let file_name = file_path.substring(parent_folder_path.length+1); 
+
+			//Get last number
+			let match2 = file_name.match(/^\d+(\.\d+)*\s+/);
+			if (match2){
+				let number = parseInt(match2[0]?.trim().split('.').pop() ?? '');
+				if (number > last_number){
+					last_number = number;
+				}
+			}
+			//if first note 
+			if (last_number == 0){
+
+
+			}
+			//if not first note = other note already created
+			else{
+				let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
+				if (match1){
+					result = match1[1];
+				}
+			}
+
+
+
+
+		}
+	}
+	console.log("Result : ",result);
+	console.log("Last number : ",last_number);
+	result = result.slice(0,-1) + (last_number + 1).toString();
+	console.log("Result Final : ",result);
+	return result;
 }
