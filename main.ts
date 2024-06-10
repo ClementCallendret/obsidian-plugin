@@ -1,14 +1,18 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { readFileSync } from "fs";
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { cp, cpSync, readFileSync } from "fs";
 import MDBReader from "mdb-reader";
-// Remember to rename these classes and interfaces!
+import { get } from 'http';
+
+
 
 interface MyPluginSettings {
 	mySetting: string;
+	id: number;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+	mySetting: 'default',
+	id: -1
 }
 
 export default class MyPlugin extends Plugin {
@@ -16,27 +20,28 @@ export default class MyPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-
+		
 		// This creates an icon in the left ribbon.
 		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			concatenate_all_notes();
+			this.concatenate_all_notes();
 			new Notice('Fichier de référence créé !');
-		
 		});
 
-
 		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', (evt: MouseEvent) => {
-			create_file();
-
+			this.create_file();
 			new Notice('Fichier créé !');
 		});
 
 		const ribbonIconE3 = this.addRibbonIcon('folder-plus', 'Créer un nouveau dossier', (evt: MouseEvent) => {
-			create_folder();
-
+			this.create_folder();
 			new Notice('Dossier créé !');
 		});
+
+		const ribbonIconE4 = this.addRibbonIcon('folder-sync', 'Synchroniser l\'ordre des fichiers', (evt: MouseEvent) => {
+			this.set_order();
+			new Notice('Ordre synchronisé !');
+			});
+
 
 		// Perform additional things with the ribbon
 		ribbonIconE1.addClass('my-plugin-ribbon-class');
@@ -45,14 +50,13 @@ export default class MyPlugin extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
-
-
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'reset-id',
+			name: 'Reset id',
 			callback: () => {
-				new SampleModal(this.app).open();
+				this.set_id(-1);
+				//new SampleModal(this.app).open();
 			}
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
@@ -97,9 +101,8 @@ export default class MyPlugin extends Plugin {
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
-	onunload() {
 
-	}
+	onunload() {}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -108,7 +111,186 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	get_id(): number {
+		return this.settings.id;
+	}
+
+	async set_id(id: number) {
+		this.settings.id = id;
+		await this.saveSettings();
+	}
+
+	async concatenate_all_notes() {
+		const vault = this.app.vault;
+		const files = vault.getMarkdownFiles();
+
+		const meta_file = `---\nid:`;
+		const nb_files = files.length;
+
+		let content = '';
+		let notes = new Array(nb_files).fill(0);
+
+		console.log("Files : ", files);
+		for (let i = nb_files - 1; i > -1; i--) {
+			let file = files[i];
+			let data = await vault.read(file);
+			if (data.startsWith(meta_file)) {
+				let match = /ordre:\s*(\d+)/.exec(data);
+				if (match) {
+					console.log("Match : ", match);
+					let ordre = parseInt(match[1]);
+					console.log("Ordre : ", ordre);
+					notes[ordre] = file;
+				}
+			}
+		}
+
+		for (let j = 0; j < nb_files; j++) {
+			let file = notes[j];
+			console.log("notes : ", notes);
+			if (file != 0) {
+				let data = await vault.read(file);
+				let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
+				let data_wt_meta = match ? match[1] : null;
+
+				content += `## ${file.basename}\n${data_wt_meta}\n\n`;
+			}
+		}
+
+		vault.create("Référence.md", content);
+	}
+
+	async create_file() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (activeFile) {
+			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
+			const files = await this.app.vault.getMarkdownFiles();
+			const digits = await this.get_next_number(folderPath, files);
+			const newFilePath = `${folderPath}/${digits} Titre.md`;
+			const id = this.get_id()+1;
+			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}" \n---`);
+			this.app.workspace.openLinkText(newFilePath, '', true);
+			await this.set_id(id);
+		}
+	}
+
+	async get_next_number(parent_folder_path: string, files: TFile[]): Promise<string> {
+		console.log("Parent folder path : ", parent_folder_path);
+		let result = "";
+		let last_number = 0;
+
+		console.log("Files : ", files);
+
+		for (let i = 0; i < files.length; i++) {
+			let file = files[i];
+			let file_path = file.path;
+			if (file_path.startsWith(parent_folder_path)) {
+				let file_name = file_path.substring(parent_folder_path.length + 1);
+
+				let match2 = file_name.match(/^\d+(\.\d+)*\s+/);
+				if (match2) {
+					let number = parseInt(match2[0]?.trim().split('.').pop() ?? '');
+					if (number > last_number) {
+						last_number = number;
+					}
+				}
+				if (last_number != 0) {
+					let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
+					if (match1) {
+						result = match1[1].slice(0, -1);
+					}
+				}
+			}
+		}
+		if (last_number == 0) {
+			let parent_folder = this.app.vault.getFolderByPath(parent_folder_path);
+			console.log("parent folder : ", parent_folder);
+			let match3 = parent_folder?.name.match(/^(.*?)\s[a-zA-Z]/);
+			if (match3) {
+				result = match3[1];
+			}
+		}
+		console.log("Result : ", result);
+		console.log("Last number : ", last_number);
+		result = result + (last_number + 1).toString();
+		console.log("Result Final : ", result);
+		return result;
+	}
+
+	async create_folder() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (activeFile) {
+			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
+			const files = await this.app.vault.getFiles();
+			const digits = await this.get_next_number(folderPath, files);
+			const newFolderPath = `${folderPath}/${digits} Fichier`;
+			await this.app.vault.createFolder(newFolderPath);
+
+			const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
+			let id = this.get_id()+1;
+			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
+			this.app.workspace.openLinkText(newFilePath, '', true);
+			await this.set_id(id);
+			this.set_id_from_file(activeFile, 45);
+			console.log("id", this.get_id_from_file(activeFile));
+			console.log("ordre", this.get_ordre_from_file(activeFile));
+			console.log("numero", this.get_numero_from_file(activeFile));
+		}
+
+		let id = this.get_id();
+		console.log(`Current ID: ${id}`);
+
+
+	}
+
+
+	async get_id_from_file(filepath:TFile){
+		let filedata = await this.app.vault.read(filepath);
+		const idMatch = filedata.match(/id:\s*(\d+)/);
+		const id = idMatch ? parseInt(idMatch[1], 10) : null;
+		return id;
+	}
+
+	async get_ordre_from_file(filepath:TFile){
+		let filedata = await this.app.vault.read(filepath);
+		const ordreMatch = filedata.match(/ordre:\s*(\d+)/);
+		const ordre = ordreMatch ? parseInt(ordreMatch[1], 10) : null;
+		return ordre;
+	}
+
+	async get_numero_from_file(filepath:TFile){
+		let filedata = await this.app.vault.read(filepath);
+		const numeroMatch = filedata.match(/numero:\s*"([\d.]+)"/);
+		const numero = numeroMatch ? numeroMatch[1] : null;
+		return numero;
+	}
+
+	async set_ordre_from_file(filepath:TFile, new_ordre:number){
+		console.log("TEST SET ORDRE")
+		let file_data = await this.app.vault.read(filepath);
+		const new_data = file_data.replace(/(ordre:\s*)\d+/, `$1${new_ordre}`);
+		await this.app.vault.modify(filepath, new_data);
+	}
+
+	async set_order(){
+		const vault = this.app.vault;
+		const files = vault.getMarkdownFiles();
+		files.reverse();
+		for (let i = 0; i < files.length; i++){
+			const file = files[i];
+			this.set_ordre_from_file(file, i);
+			/*
+			console.log("id", await this.get_id_from_file(file));
+			console.log("ordre", await this.get_ordre_from_file(file));
+			console.log("numero", await this.get_numero_from_file(file));
+			*/
+
+
+		}
+	}	
 }
+
 
 class SampleModal extends Modal {
 	constructor(app: App) {
@@ -116,12 +298,12 @@ class SampleModal extends Modal {
 	}
 
 	onOpen() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.setText('Woah!');
 	}
 
 	onClose() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.empty();
 	}
 }
@@ -135,7 +317,7 @@ class SampleSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 
 		containerEl.empty();
 
@@ -152,135 +334,4 @@ class SampleSettingTab extends PluginSettingTab {
 	}
 }
 
-async function concatenate_all_notes(){
-	const vault = app.vault;  
 
-	const files = await vault.getMarkdownFiles();  
-
-	const meta_file = `---\nid`;
-	const nb_files = files.length;
-
-	let content = '';  
-	let notes = new Array(nb_files).fill(0);
-
-	console.log("Files : ",files);
-	for (let i = nb_files-1; i > -1; i--)
-		{  
-		let file = files[i];
-		let data = await vault.read(file);
-		if (data.startsWith(meta_file))
-		{
-			let match = data.match(/---\s*id:\s*"(\d+)"\s*---/);
-			if (match)
-			{
-				let id = parseInt(match[1]);
-				notes[id] = file
-			}
-		}  
-	}
-
-	for (let j = 0; j < nb_files; j++){
-		let file = notes[j];
-		if (file != 0) {
-			let data = await vault.read(file);
-
-			let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
-			let data_wt_meta = match ? match[1] : null; // Add null check for match
-
-			content += `## ${file.basename}\n${data_wt_meta}\n\n`;
-		}
-	}
-
-	vault.create("Référence.md",content);
-
-
-}
-
-function read_database(){
-	const buffer = readFileSync("Spaces.mdb");
-	const reader = new MDBReader(buffer);
-
-	reader.getTableNames(); // ['Cats', 'Dogs', 'Cars']
-
-	const table = reader.getTable("Cats");
-	table.getColumnNames(); // ['id', 'name', 'color']
-	table.getData(); // [{id: 5, name: 'Ashley', color: 'black'}, ...]
-	console.log("READ DATABASE")
-}
-
-
-//Create a new file with the next number in the title from the current file
-async function create_file(){
-	const activeFile = this.app.workspace.getActiveFile();
-    if (activeFile) {
-		const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-		const digits = await get_next_number(folderPath);
-		const newFilePath = `${folderPath}/${digits} Titre.md`;
-		await this.app.vault.create(newFilePath, '---\nid: 1 \nordre: 1 \n---');
-		this.app.workspace.openLinkText(newFilePath, '', true);
-
-    }
-}
-
-async function get_next_number(parent_folder_path: string):Promise<string>{
-	console.log("Parent folder path : ",parent_folder_path);
-	let result = "";
-	let last_number = 0;
-	const files = await app.vault.getMarkdownFiles();
-	//console.log("Files : ",files);  
-	
-
-	for (let i = 0; i < files.length; i++){
-		let file = files[i];
-		let file_path = file.path;
-		if (file_path.startsWith(parent_folder_path)){
-			let file_name = file_path.substring(parent_folder_path.length+1); 
-
-			//Get last number
-			let match2 = file_name.match(/^\d+(\.\d+)*\s+/);
-			if (match2){
-				let number = parseInt(match2[0]?.trim().split('.').pop() ?? '');
-				if (number > last_number){
-					last_number = number;
-				}
-			}
-			//if not first note 
-			if (last_number != 0){
-				let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
-				if (match1){
-					result = match1[1].slice(0,-1);
-				}
-			}
-		}
-	}
-	if (last_number == 0){
-		let parent_folder = app.vault.getFolderByPath(parent_folder_path); 
-		console.log("parent folder : ",parent_folder);
-		let match3 = parent_folder?.name.match(/^(.*?)\s[a-zA-Z]/);
-		if (match3){
-			result = match3[1];
-		}
-
-	}
-	console.log("Result : ",result);
-	console.log("Last number : ",last_number);
-	result = result + (last_number + 1).toString();
-	console.log("Result Final : ",result);
-	return result;
-}
-
-//Create a new folder and the first note in it 
-async function create_folder(){
-	const activeFile = this.app.workspace.getActiveFile();
-	if (activeFile) {
-		const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-		const digits = await get_next_number(folderPath);
-		const newFolderPath = `${folderPath}/${digits}. Fichier`;
-		this.app.vault.createFolder(newFolderPath);
-		
-		const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
-		await this.app.vault.create(newFilePath, '---\nid: 1 \nordre: 1 \n---');
-		this.app.workspace.openLinkText(newFilePath, '', true);
-
-	}
-}
