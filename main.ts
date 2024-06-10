@@ -1,25 +1,22 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
-import { cp, cpSync, readFileSync } from "fs";
-import MDBReader from "mdb-reader";
-import { get } from 'http';
+import { Editor,MarkdownView, Notice, Plugin,TFile, WorkspaceLeaf } from 'obsidian';
+import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
+import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
+import { SampleModal } from './src/modal/modal';
 
-
-
-interface MyPluginSettings {
-	mySetting: string;
-	id: number;
-}
-
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
-	id: -1
-}
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload() {
-		await this.loadSettings();
+        await this.loadSettings();
+		this.registerView(
+			VIEW_TYPE_EXAMPLE,
+			(leaf) => new ExampleView(leaf)
+		  );
+	  
+		  this.addRibbonIcon("dice", "Activate view", () => {
+			this.activateView();
+		  });
 		
 		// This creates an icon in the left ribbon.
 		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', (evt: MouseEvent) => {
@@ -99,10 +96,36 @@ export default class MyPlugin extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
 	}
 
 
 	onunload() {}
+
+    get_id(): number {
+        return this.settings.id;
+    }
+
+	async activateView() {
+		const { workspace } = this.app;
+	
+		let leaf: WorkspaceLeaf | null = null;
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
+	
+		if (leaves.length > 0) {
+		  // A leaf with our view already exists, use that
+		  leaf = leaves[0];
+		} else {
+		  // Our view could not be found in the workspace, create a new leaf
+		  // in the right sidebar for it
+		  //leaf = workspace.getRightLeaf(false);
+		  leaf = workspace.getLeftLeaf(false);
+		  await leaf.setViewState({ type: VIEW_TYPE_EXAMPLE, active: true });
+		}
+	
+		// "Reveal" the leaf in case it is in a collapsed sidebar
+		workspace.revealLeaf(leaf);
+	  }
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -112,9 +135,7 @@ export default class MyPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	get_id(): number {
-		return this.settings.id;
-	}
+
 
 	async set_id(id: number) {
 		this.settings.id = id;
@@ -131,24 +152,25 @@ export default class MyPlugin extends Plugin {
 		let content = '';
 		let notes = new Array(nb_files).fill(0);
 
-		console.log("Files : ", files);
+		//console.log("Files : ", files);
+		//Remise en ordre
 		for (let i = nb_files - 1; i > -1; i--) {
 			let file = files[i];
 			let data = await vault.read(file);
 			if (data.startsWith(meta_file)) {
 				let match = /ordre:\s*(\d+)/.exec(data);
 				if (match) {
-					console.log("Match : ", match);
+					//console.log("Match : ", match);
 					let ordre = parseInt(match[1]);
-					console.log("Ordre : ", ordre);
+					//console.log("Ordre : ", ordre);
 					notes[ordre] = file;
 				}
 			}
 		}
-
+		//Concaténation
 		for (let j = 0; j < nb_files; j++) {
 			let file = notes[j];
-			console.log("notes : ", notes);
+			//console.log("notes : ", notes);
 			if (file != 0) {
 				let data = await vault.read(file);
 				let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
@@ -157,8 +179,23 @@ export default class MyPlugin extends Plugin {
 				content += `## ${file.basename}\n${data_wt_meta}\n\n`;
 			}
 		}
-
-		vault.create("Référence.md", content);
+		//Nom du fichier
+		const root_folder = vault.getFolderByPath("/")?.children;
+		let reference_folder_created = false;
+		if (root_folder != null){
+			for (let i = 0; i < root_folder.length; i++) {
+				if (root_folder[i].name == "Références") {
+					console.log("Références existe");
+					reference_folder_created = true;
+				}
+			}
+		}
+		if (!reference_folder_created) {
+			vault.createFolder("Références");
+		}
+		const digits = await this.get_next_number('Références', files);
+		const newFilePath = `/Références/${digits} Référence.md`;
+		vault.create(newFilePath, content);		
 	}
 
 	async create_file() {
@@ -169,6 +206,7 @@ export default class MyPlugin extends Plugin {
 			const digits = await this.get_next_number(folderPath, files);
 			const newFilePath = `${folderPath}/${digits} Titre.md`;
 			const id = this.get_id()+1;
+            
 			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}" \n---`);
 			this.app.workspace.openLinkText(newFilePath, '', true);
 			await this.set_id(id);
@@ -180,21 +218,26 @@ export default class MyPlugin extends Plugin {
 		let result = "";
 		let last_number = 0;
 
-		console.log("Files : ", files);
+		//console.log("Files : ", files);
 
 		for (let i = 0; i < files.length; i++) {
 			let file = files[i];
 			let file_path = file.path;
+			console.log("File path : ", file_path);
 			if (file_path.startsWith(parent_folder_path)) {
 				let file_name = file_path.substring(parent_folder_path.length + 1);
+				
 
+				//Si il y a déjà un fichier avec un numéro du dossier
 				let match2 = file_name.match(/^\d+(\.\d+)*\s+/);
 				if (match2) {
+					console.log("Match2 : ", match2);
 					let number = parseInt(match2[0]?.trim().split('.').pop() ?? '');
 					if (number > last_number) {
 						last_number = number;
 					}
 				}
+				//Si c'est le premier fichier du dossier
 				if (last_number != 0) {
 					let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
 					if (match1) {
@@ -232,7 +275,8 @@ export default class MyPlugin extends Plugin {
 			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
 			this.app.workspace.openLinkText(newFilePath, '', true);
 			await this.set_id(id);
-			this.set_id_from_file(activeFile, 45);
+			
+			this.set_ordre_from_file(activeFile, 45);
 			console.log("id", this.get_id_from_file(activeFile));
 			console.log("ordre", this.get_ordre_from_file(activeFile));
 			console.log("numero", this.get_numero_from_file(activeFile));
@@ -267,7 +311,6 @@ export default class MyPlugin extends Plugin {
 	}
 
 	async set_ordre_from_file(filepath:TFile, new_ordre:number){
-		console.log("TEST SET ORDRE")
 		let file_data = await this.app.vault.read(filepath);
 		const new_data = file_data.replace(/(ordre:\s*)\d+/, `$1${new_ordre}`);
 		await this.app.vault.modify(filepath, new_data);
@@ -275,63 +318,49 @@ export default class MyPlugin extends Plugin {
 
 	async set_order(){
 		const vault = this.app.vault;
-		const files = vault.getMarkdownFiles();
-		files.reverse();
+		const files = vault.getMarkdownFiles().reverse();
+        let list_file = [];
 		for (let i = 0; i < files.length; i++){
 			const file = files[i];
 			this.set_ordre_from_file(file, i);
-			/*
+            let numero = await this.get_numero_from_file(file);
+            if(numero != null){
+			    list_file.push(file);
+            }
+
 			console.log("id", await this.get_id_from_file(file));
 			console.log("ordre", await this.get_ordre_from_file(file));
 			console.log("numero", await this.get_numero_from_file(file));
-			*/
-
-
 		}
-	}	
+        console.log("Liste des numéros : ", list_file);
+        list_file.sort(this.compare_versions);
+        console.log("Liste des numéros triés : ", list_file);
+	}
+
+
+    async compare_versions(a : TFile, b : TFile) {
+        const num_a = await this.get_numero_from_file(a);
+        const num_b = await this.get_numero_from_file(b);
+        if (num_a === null || num_b === null) {
+            return 0;
+        }
+        const a_parts = num_a.split('.').map(Number);
+        const b_parts = num_b.split('.').map(Number);
+    
+        const length = Math.max(a_parts.length, b_parts.length);
+    
+        for (let i = 0; i < length; i++) {
+            const aValue = a_parts[i] !== undefined ? a_parts[i] : 0;
+            const bValue = b_parts[i] !== undefined ? b_parts[i] : 0;
+    
+            if (aValue > bValue) {
+                return 1;
+            }
+            if (aValue < bValue) {
+                return -1;
+            }
+        }
+    
+        return 0;
+    }	
 }
-
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
-}
-
-
