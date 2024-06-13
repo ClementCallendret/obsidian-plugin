@@ -6,3 +6,19 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+.sortable-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.sortable-item {
+    padding: 10px;
+    margin: 5px 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    cursor: move;
+}
+
+.drag-over {
+    background-color: #f0f0f0;
+}

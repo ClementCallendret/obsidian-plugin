@@ -1,4 +1,4 @@
-import { Editor,MarkdownView, Notice, Plugin,TFile, WorkspaceLeaf } from 'obsidian';
+import { Editor,MarkdownView, Notice, Plugin,TAbstractFile,TFile, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
 import { SampleModal } from './src/modal/modal';
@@ -6,14 +6,12 @@ import { SampleModal } from './src/modal/modal';
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
+    private initial_load: boolean = true;
+
 
 	async onload() {
         await this.loadSettings();
-		this.registerView(
-			VIEW_TYPE_EXAMPLE,
-			(leaf) => new ExampleView(leaf)
-		  );
-	  
+
 		  this.addRibbonIcon("dice", "Activate view", () => {
 			this.activateView();
 		  });
@@ -97,6 +95,38 @@ export default class MyPlugin extends Plugin {
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 
+        this.registerEvent(
+            this.app.vault.on('create', async (file: TAbstractFile) => {
+                if (!this.initial_load) {
+                    await this.set_order();
+					this.updateExampleView();
+                }
+            })
+        );
+		this.registerEvent(
+            this.app.vault.on('delete', async (file: TAbstractFile) => {
+				await this.set_order();
+				this.updateExampleView();
+            })
+        );
+
+        this.registerEvent(
+            this.app.vault.on('rename', async (file: TAbstractFile) => {
+				await this.set_order();
+                this.updateExampleView();
+            })
+        );
+
+		this.registerView(
+			VIEW_TYPE_EXAMPLE,
+			(leaf) => new ExampleView(leaf)
+		  );
+        
+          this.app.workspace.onLayoutReady(() => {
+            // Le chargement initial est terminé
+            this.initial_load = false;
+        });
+ 
 	}
 
 
@@ -105,6 +135,7 @@ export default class MyPlugin extends Plugin {
     get_id(): number {
         return this.settings.id;
     }
+
 
 	async activateView() {
 		const { workspace } = this.app;
@@ -127,6 +158,13 @@ export default class MyPlugin extends Plugin {
 		workspace.revealLeaf(leaf);
 	  }
 
+	async updateExampleView() {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
+        if (leaves.length > 0) {
+            const view = leaves[0].view as ExampleView;
+            view.updateFileList();
+        }
+    }
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -195,7 +233,9 @@ export default class MyPlugin extends Plugin {
 		}
 		const digits = await this.get_next_number('Références', files);
 		const newFilePath = `/Références/${digits} Référence.md`;
-		vault.create(newFilePath, content);		
+		await vault.create(newFilePath, content);		
+        this.app.workspace.openLinkText(newFilePath, '', true);
+
 	}
 
 	async create_file() {
@@ -207,9 +247,11 @@ export default class MyPlugin extends Plugin {
 			const newFilePath = `${folderPath}/${digits} Titre.md`;
 			const id = this.get_id()+1;
             
-			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}" \n---`);
-			this.app.workspace.openLinkText(newFilePath, '', true);
+			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---`);
 			await this.set_id(id);
+			await this.set_order();
+
+			await this.app.workspace.openLinkText(newFilePath, '', true);
 		}
 	}
 
@@ -273,10 +315,12 @@ export default class MyPlugin extends Plugin {
 			const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
 			let id = this.get_id()+1;
 			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
-			this.app.workspace.openLinkText(newFilePath, '', true);
 			await this.set_id(id);
-			
-			this.set_ordre_from_file(activeFile, 45);
+			this.set_ordre_from_file(activeFile, 0);
+            await this.set_order();
+
+            this.app.workspace.openLinkText(newFilePath, '', true);
+
 			console.log("id", this.get_id_from_file(activeFile));
 			console.log("ordre", this.get_ordre_from_file(activeFile));
 			console.log("numero", this.get_numero_from_file(activeFile));
@@ -284,7 +328,6 @@ export default class MyPlugin extends Plugin {
 
 		let id = this.get_id();
 		console.log(`Current ID: ${id}`);
-
 
 	}
 
@@ -327,20 +370,27 @@ export default class MyPlugin extends Plugin {
             if(numero != null){
 			    list_file.push(file);
             }
-
+            /*
 			console.log("id", await this.get_id_from_file(file));
 			console.log("ordre", await this.get_ordre_from_file(file));
 			console.log("numero", await this.get_numero_from_file(file));
+            */
 		}
         console.log("Liste des numéros : ", list_file);
-        list_file.sort(this.compare_versions);
+        /*
+		list_file.sort(this.compare_versions);
         console.log("Liste des numéros triés : ", list_file);
+		*/
 	}
 
 
-    async compare_versions(a : TFile, b : TFile) {
+    async compare_versions(a : TFile, b : TFile): Promise<number> {
+        console.log("a : ", a);
+        console.log("b : ", b); 
         const num_a = await this.get_numero_from_file(a);
         const num_b = await this.get_numero_from_file(b);
+        console.log("num_a : ", num_a);
+        console.log("num_b : ", num_b);
         if (num_a === null || num_b === null) {
             return 0;
         }
@@ -363,4 +413,5 @@ export default class MyPlugin extends Plugin {
     
         return 0;
     }	
+	
 }
