@@ -12,13 +12,21 @@ If your plugin does not need CSS, delete this file.
 }
 
 .sortable-item {
-    padding: 10px;
-    margin: 5px 0;
-    background: #fff;
-    border: 1px solid #ccc;
-    cursor: move;
+    margin: 0px;
+    padding: 2px;
+    border: 1px solid #00000000;
+    background-color: #00000000;
+    cursor: grab;
 }
 
-.drag-over {
-    background-color: #f0f0f0;
+.sortable-item.drag-over {
+    border-top: 2px solid #3498db;
 }
+
+.sortable-item.dragging {
+    opacity: 0.5;
+}
+  
+.disable-pointer-events {
+    pointer-events: none;
+  }

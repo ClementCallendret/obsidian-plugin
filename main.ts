@@ -1,4 +1,4 @@
-import { Editor,MarkdownView, Notice, Plugin,TAbstractFile,TFile, WorkspaceLeaf } from 'obsidian';
+import { Editor,MarkdownView, Notice, Plugin,TAbstractFile,TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
 import { SampleModal } from './src/modal/modal';
@@ -14,6 +14,7 @@ export default class MyPlugin extends Plugin {
 
 		  this.addRibbonIcon("dice", "Activate view", () => {
 			this.activateView();
+			//this.parcours_profondeur(app.vault.getRoot(), 0);
 		  });
 		
 		// This creates an icon in the left ribbon.
@@ -147,15 +148,19 @@ export default class MyPlugin extends Plugin {
 		  // A leaf with our view already exists, use that
 		  leaf = leaves[0];
 		} else {
-		  // Our view could not be found in the workspace, create a new leaf
-		  // in the right sidebar for it
-		  //leaf = workspace.getRightLeaf(false);
-		  leaf = workspace.getLeftLeaf(false);
-		  await leaf.setViewState({ type: VIEW_TYPE_EXAMPLE, active: true });
+		// Our view could not be found in the workspace, create a new leaf
+		// in the right sidebar for it
+		//leaf = workspace.getRightLeaf(false);
+		leaf = workspace.getLeftLeaf(false);
+		if (leaf) {
+			await leaf.setViewState({ type: VIEW_TYPE_EXAMPLE, active: true });
+		}
 		}
 	
 		// "Reveal" the leaf in case it is in a collapsed sidebar
-		workspace.revealLeaf(leaf);
+		if (leaf) {
+		  workspace.revealLeaf(leaf);
+		}
 	  }
 
 	async updateExampleView() {
@@ -265,7 +270,7 @@ export default class MyPlugin extends Plugin {
 		for (let i = 0; i < files.length; i++) {
 			let file = files[i];
 			let file_path = file.path;
-			console.log("File path : ", file_path);
+			//console.log("File path : ", file_path);
 			if (file_path.startsWith(parent_folder_path)) {
 				let file_name = file_path.substring(parent_folder_path.length + 1);
 				
@@ -296,10 +301,10 @@ export default class MyPlugin extends Plugin {
 				result = match3[1];
 			}
 		}
-		console.log("Result : ", result);
-		console.log("Last number : ", last_number);
+		//console.log("Result : ", result);
+		//console.log("Last number : ", last_number);
 		result = result + (last_number + 1).toString();
-		console.log("Result Final : ", result);
+		//console.log("Result Final : ", result);
 		return result;
 	}
 
@@ -311,6 +316,7 @@ export default class MyPlugin extends Plugin {
 			const digits = await this.get_next_number(folderPath, files);
 			const newFolderPath = `${folderPath}/${digits} Fichier`;
 			await this.app.vault.createFolder(newFolderPath);
+			
 
 			const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
 			let id = this.get_id()+1;
@@ -320,14 +326,15 @@ export default class MyPlugin extends Plugin {
             await this.set_order();
 
             this.app.workspace.openLinkText(newFilePath, '', true);
-
+			/*
 			console.log("id", this.get_id_from_file(activeFile));
 			console.log("ordre", this.get_ordre_from_file(activeFile));
 			console.log("numero", this.get_numero_from_file(activeFile));
+			*/
 		}
 
 		let id = this.get_id();
-		console.log(`Current ID: ${id}`);
+		//console.log(`Current ID: ${id}`);
 
 	}
 
@@ -339,7 +346,7 @@ export default class MyPlugin extends Plugin {
 		return id;
 	}
 
-	async get_ordre_from_file(filepath:TFile){
+	public async get_ordre_from_file(filepath:TFile){
 		let filedata = await this.app.vault.read(filepath);
 		const ordreMatch = filedata.match(/ordre:\s*(\d+)/);
 		const ordre = ordreMatch ? parseInt(ordreMatch[1], 10) : null;
@@ -351,6 +358,12 @@ export default class MyPlugin extends Plugin {
 		const numeroMatch = filedata.match(/numero:\s*"([\d.]+)"/);
 		const numero = numeroMatch ? numeroMatch[1] : null;
 		return numero;
+	}
+
+	async set_numero_from_file(filepath:TFile, new_numero:string){
+		let file_data = await this.app.vault.read(filepath);
+		const new_data = file_data.replace(/(numero:\s*")([\d.]+)"/, `$1${new_numero}"`);
+		await this.app.vault.modify(filepath, new_data);
 	}
 
 	async set_ordre_from_file(filepath:TFile, new_ordre:number){
@@ -376,7 +389,7 @@ export default class MyPlugin extends Plugin {
 			console.log("numero", await this.get_numero_from_file(file));
             */
 		}
-        console.log("Liste des numéros : ", list_file);
+        //console.log("Liste des numéros : ", list_file);
         /*
 		list_file.sort(this.compare_versions);
         console.log("Liste des numéros triés : ", list_file);
@@ -413,5 +426,7 @@ export default class MyPlugin extends Plugin {
     
         return 0;
     }	
+
+
 	
 }
