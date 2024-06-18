@@ -196,22 +196,34 @@ export class ExampleView extends ItemView {
           return;
         }
 
-        console.log('targetPath', targetPath, 'sourcePath', sourcePath);
+        //console.log('targetPath', targetPath, 'sourcePath', sourcePath);
      
         // Concaténer le début du chemin de destination avec la fin du chemin source
-        const combinedTargetPath = targetPath.substring(0, targetPath.lastIndexOf("/")) + sourcePath.substring(sourcePath.lastIndexOf("/"));
+        let target_file = this.app.vault.getAbstractFileByPath(targetPath);
+
+        
         //console.log("targetPath : ", targetPath);
         //console.log("sourcePath : ", sourcePath);
         //console.log("combinedTargetPath : ", combinedTargetPath);
         // Déplacer le fichier/dossier avec app.fileManager.renameFile
-        await this.insert_new_file(sourcePath, targetPath);
+        //Rennomage des fichiers/dossiers
+        this.insert_new_file(sourcePath, targetPath);
+        console.log("------------------INSERT NEW FILE DONE------------------");
+        //renommage elem déplacé
+        let new_path = "";
+        if (target_file != null){
+          new_path = target_file.parent?.path + "/" + this.getNumber(target_file.name) + " " + this.getTitleWithoutNumber(sourceFile.name);
+        }
         console.log("insert_new_file done");
-        await this.app.fileManager.renameFile(sourceFile, combinedTargetPath);
+        console.log("sourceFile : ", sourceFile);
+        console.log("new_path : ", new_path);
+        this.app.fileManager.renameFile(sourceFile, new_path);
   
         console.log("Fichier/dossier déplacé avec succès !");
   
         // Mettre à jour l'interface après le déplacement si nécessaire
         await this.updateFileList();
+        //this.app.workspace.openLinkText(new_path, "", true);
       } catch (error) {
         console.error("Erreur lors du déplacement du fichier/dossier :", error);
       }
@@ -283,6 +295,7 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
   
 
   insert_new_file(source_path: string, target_path: string) {
+    console.log("--------------insert new file -----------------");
     console.log("Source path : ", source_path);
     console.log("Target path : ", target_path);
     let source = this.app.vault.getAbstractFileByPath(source_path);
@@ -290,7 +303,9 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
     let target_file_last_number = 0;
 
     if (target != null) {
-     target_file_last_number = this.getLastNumber(target.name);  
+      console.log("Target file name : ", target.name);
+      target_file_last_number = this.getLastNumber(target.name);  
+      console.log("Target file last number : ", target_file_last_number);
   }
 
 
@@ -317,6 +332,8 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
       //Cas 2 : dossier différent
       else {
         console.log("-------------Different folder-----------------");
+        this.rename_folder_children(parent_folder as TFolder, target_file_last_number);
+        /*
         let new_title = "";
         //Cas 2.1 : le fichier target est un fichier
         if (target instanceof TFile) {
@@ -354,14 +371,100 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
         //Cas 2.2 : le fichier source est un dossier
         else {
           console.log("CAS 2.2");          
-        }
-
-
+        }*/
 
       }
   }
 
 	}
+// Renommer tous les fichiers dans un dossier + tous les sous-dossiers
+rename_folder_children(parent_folder: TFolder, number: number) {
+  console.log("-------------------rename_folder_children-------------------");
+  console.log("Parent folder : ", parent_folder);
+  console.log("Number : ", number);
+
+  let children = parent_folder.children;
+  
+  // Séparer les dossiers et les fichiers
+  let folders = children.filter(child => child instanceof TFolder) as TFolder[];
+  let files = children.filter(child => child instanceof TFile) as TFile[];
+
+  // Renommer les sous-dossiers en premier pour éviter les conflits de noms
+  if (number > 0) {
+      folders.reverse();
+  }
+
+  for (let folder of folders) {
+      this.rename_folder(folder, number);
+  }
+
+  // Renommer les fichiers après les sous-dossiers
+  for (let file of files) {
+      this.rename_file(file, number);
+  }
+}
+
+rename_folder(folder: TFolder, number: number) {
+  let folder_number = this.getLastNumber(folder.name);
+  let new_path = folder.path;
+
+  // Cas 1 : le dossier est contenu dans un dossier qui s'est fait renommer
+  if (number == 0 && folder.parent != null) {
+      console.log("---------------------------- number = 0 ----------------------------");
+      new_path = folder.parent.path + "/" + this.getNumber(folder.parent.name) + "." + this.getLastNumber(folder.name) + " " + this.getTitleWithoutNumber(folder.name);
+  }
+  // Cas 2 : Incrémenter les dossiers si besoin
+  else if (number > 0 && folder_number >= number) {
+      new_path = folder.parent.path + "/" + this.incrementLastNumber(folder.name);
+  }
+  // Cas 3 : Décrémenter les dossiers si besoin
+  else if (number < 0 && folder_number >= (-number)) {
+      new_path = folder.parent.path + "/" + this.decrementLastNumber(folder.name);
+  }
+
+  // Si le chemin du dossier a changé -> le renommer
+  if (folder.path != new_path) {
+      console.log("Rename folder : ", folder.path, " to ", new_path);
+      this.app.fileManager.renameFile(folder, new_path)
+          .then(() => {
+              // Récursion pour renommer les sous-dossiers et fichiers du dossier renommé
+              let renamedFolder = this.app.vault.getAbstractFileByPath(new_path) as TFolder;
+              this.rename_folder_children(renamedFolder, 0);
+          });
+  } else {
+      // Récursion pour renommer les sous-dossiers et fichiers si pas de changement de nom
+      this.rename_folder_children(folder, number);
+  }
+}
+
+rename_file(file: TFile, number: number) {
+  let file_number = this.getLastNumber(file.name);
+  let new_path = file.path;
+
+  // Cas 1 : le fichier est contenu dans un dossier qui s'est fait renommer
+  if (number == 0 && file.parent != null) {
+      console.log("---------------------------- number = 0 ----------------------------");
+      new_path = file.parent.path + "/" + this.getNumber(file.parent.name) + "." + this.getLastNumber(file.name) + " " + this.getTitleWithoutNumber(file.name);
+  }
+  // Cas 2 : Incrémenter les fichiers si besoin
+  else if (number > 0 && file_number >= number) {
+      new_path = file.parent.path + "/" + this.incrementLastNumber(file.name);
+  }
+  // Cas 3 : Décrémenter les fichiers si besoin
+  else if (number < 0 && file_number >= (-number)) {
+      new_path = file.parent.path + "/" + this.decrementLastNumber(file.name);
+  }
+
+  // Si le chemin du fichier a changé -> le renommer
+  if (file.path != new_path) {
+      console.log("Rename file : ", file.path, " to ", new_path);
+      this.app.fileManager.renameFile(file, new_path);
+  }
+}
+
+  
+  
+
   async get_numero_from_file(filepath: TFile): Promise<string | null> {
     let fileData = await this.app.vault.read(filepath);
     const numeroMatch = fileData.match(/numero:\s*"([\d.]+)"/);
@@ -389,7 +492,56 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
     return lastNumber ? parseFloat(lastNumber) : NaN;
 }
 
+getNumber(input: string): string {
+  // Sépare la partie "nombre" de la partie "titre"
+  const [numberPart] = input.split(" ");
+  
+  // Retourne directement la partie "nombre"
+  return numberPart;
+}
+
+ getTitleWithoutNumber(input: string): string {
+  // Trouve l'indice du premier espace
+  const spaceIndex = input.indexOf(" ");
+  
+  // Retourne la partie après le premier espace
+  if (spaceIndex !== -1) {
+      return input.substring(spaceIndex + 1);
+  } else {
+      // Si aucun espace n'est trouvé, retourne la chaîne complète
+      return input;
+  }
+}
+
   incrementLastNumber(input: string): string {
+    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex pour capturer le dernier nombre
+    const match = input.match(regex);
+
+    if (!match) {
+        // Aucun nombre trouvé à la fin, retourner l'entrée telle quelle
+        return input;
+    }
+
+    const numPart = match[1]; // Partie contenant le nombre
+    const restPart = match[3] ?? ""; // Partie restante après le nombre, si présente
+
+    const numParts = numPart.split('.'); // Séparer les parties du nombre par les points
+    const lastNum = parseInt(numParts.pop()!); // Extraire et convertir le dernier nombre en entier
+
+    if (isNaN(lastNum)) {
+        // Si le dernier nombre n'est pas un nombre valide, retourner l'entrée telle quelle
+        return input;
+    }
+
+    const incrementedNum = lastNum + 1; // Incrémenter le dernier nombre
+
+    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); // Reconstruire la partie nombre
+
+    // Reconstruire la chaîne avec le nombre incrémenté et le reste de la chaîne
+    return newNumPart + restPart;
+  }
+
+  decrementLastNumber(input: string): string {
     const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex pour capturer le dernier nombre
     const match = input.match(regex);
 
