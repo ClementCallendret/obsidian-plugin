@@ -342,7 +342,7 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
         console.log("-------------Different folder-----------------");
         //Incrémenter de 1 les fichiers dans le dossier cible
         this.rename_folder_children(parent_folder as TFolder, target_file_last_number);
-        
+
         //On récupère le parent du fichier source avant de le déplacer 
         let source_parent;
         if (source?.parent != null){
@@ -350,20 +350,23 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
         }
 
         //Déplacer le fichier source dans le dossier cible
-        if (target != null && source != null){
+        if (target != null && source != null ){
           new_path = target.parent?.path + "/" + this.getNumber(target.name) + " " + this.getTitleWithoutNumber(source.name);
           console.log("DEPLACEMENT DU SOURCE FILE DANS LE DOSSIER CIBLE")
-          console.log("Source file : ", source, "Target file : ", target, "New path : ", new_path);
           await this.app.fileManager.renameFile(source, new_path);
 
-        }
+          if (source instanceof TFolder){
+            this.rename_folder_children(source as TFolder,0);
+          }
+           
         else{
           console.log("-------------------ERROR-------------------");
           console.log("Erreur lors du déplacement du fichier source dans le dossier cible");
         }
+        console.log("Source file : ", source);
+        console.log("target", target);
+        console.log("new_path", new_path);
         console.log("insert_new_file done");
-        console.log("sourceFile : ", source);
-        console.log("new_path : ", new_path);
 
         //Décrémenter de 1 les fichiers dans le dossier source
         this.rename_folder_children(source_parent as TFolder, (-souce_file_last_number));
@@ -409,7 +412,7 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
           console.log("CAS 2.2");          
         }*/
 
-      }
+      }}
   }
 
 	}
@@ -428,6 +431,7 @@ rename_folder_children(parent_folder: TFolder, number: number) {
   // Renommer les sous-dossiers en premier pour éviter les conflits de noms
   if (number > 0) {
       folders.reverse();
+      files.reverse();
   }
 
   for (let folder of folders) {
@@ -481,13 +485,18 @@ rename_file(file: TFile, number: number) {
   if (number == 0 && file.parent != null) {
       console.log("---------------------------- number = 0 ----------------------------");
       new_path = file.parent.path + "/" + this.getNumber(file.parent.name) + "." + this.getLastNumber(file.name) + " " + this.getTitleWithoutNumber(file.name);
+      
   }
   // Cas 2 : Incrémenter les fichiers si besoin
   else if (number > 0 && file_number >= number && file.parent != null) {
+    console.log("---------------------------- number > 0 ----------------------------");
+    console.log("file.parent.path : ", file.parent.path, "this.incrementLastNumber(file.name) : ", this.incrementLastNumber(file.name));
       new_path = file.parent.path + "/" + this.incrementLastNumber(file.name);
+      
   }
   // Cas 3 : Décrémenter les fichiers si besoin
   else if (number < 0 && file_number >= (-number) && file.parent != null) {
+    console.log("---------------------------- number < 0 ----------------------------");
       new_path = file.parent.path + "/" + this.decrementLastNumber(file.name);
   }
 
@@ -574,7 +583,9 @@ getNumber(input: string): string {
     const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); // Reconstruire la partie nombre
 
     // Reconstruire la chaîne avec le nombre incrémenté et le reste de la chaîne
-    return newNumPart + restPart;
+
+    let res = newNumPart + restPart;
+    return res.replace(/^\.+/, '');
   }
 
   decrementLastNumber(input: string): string {
