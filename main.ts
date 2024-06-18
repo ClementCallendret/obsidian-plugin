@@ -249,7 +249,7 @@ export default class MyPlugin extends Plugin {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
 			const files = await this.app.vault.getMarkdownFiles();
 			const digits = await this.get_next_number(folderPath, files);
-			const newFilePath = `${folderPath}/${digits} Titre.md`;
+			const newFilePath = `${folderPath}/${digits} Titre${digits}.md`;
 			const id = this.get_id()+1;
             
 			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---`);

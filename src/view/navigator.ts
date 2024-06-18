@@ -295,127 +295,94 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
 }
   
 
-  async insert_new_file(source_path: string, target_path: string) {
-    console.log("--------------insert new file -----------------");
-    console.log("Source path : ", source_path);
-    console.log("Target path : ", target_path);
-    let source = this.app.vault.getAbstractFileByPath(source_path);
-    let target = this.app.vault.getAbstractFileByPath(target_path);
-    let target_file_last_number = 0;
-    let souce_file_last_number = 0;
-    let new_path = "";
+async insert_new_file(source_path: string, target_path: string) {
+  console.log("--------------insert new file -----------------");
+  console.log("Source path : ", source_path);
+  console.log("Target path : ", target_path);
+  let source = this.app.vault.getAbstractFileByPath(source_path);
+  let target = this.app.vault.getAbstractFileByPath(target_path);
+  let target_file_last_number = 0;
+  let source_file_last_number = 0;
+  let new_path = "";
 
-
-    if (target != null) {
-      console.log("Target file name : ", target.name);
-      target_file_last_number = this.getLastNumber(target.name);  
-      console.log("Target file last number : ", target_file_last_number);
+  if (target != null) {
+    console.log("Target file name : ", target.name);
+    target_file_last_number = this.getLastNumber(target.name);  
+    console.log("Target file last number : ", target_file_last_number);
   }
   if (source != null) {
     console.log("Source file name : ", source.name);
-    souce_file_last_number = this.getLastNumber(source.name);
-    console.log("Source file last number : ", souce_file_last_number);
+    source_file_last_number = this.getLastNumber(source.name);
+    console.log("Source file last number : ", source_file_last_number);
   }
 
-    
-    //révcupérer le nom du dossier parent
-    console.log("Target file : ", target);
-    let parent_folder = target?.parent;
-    if (parent_folder != null) {
-      //Cas 1 : même dossier
-      if (source?.parent == parent_folder) {
-        console.log("Same folder");
-        //Cas 1.1 : le fichier target est un fichier
-        if (target instanceof TFile){
-          console.log("CAS 1.1");
-        }
-        //Cas 1.2 : le fichier source est un dossier
-        else{
-          console.log("CAS 1.2");
-        }
+  //récupérer le nom du dossier parent
+  console.log("Target file : ", target);
+  let parent_folder = target?.parent;
+  if (parent_folder != null) {
+    //Cas 1 : même dossier
+    if (source?.parent == parent_folder && target != null) {
+      console.log("Same folder");
+      //Cas 1.1 : le fichier target est un fichier
+      console.log("CAS 1.1");
+      //future path
+      let new_path = parent_folder.path + "/" + this.getNumber(target.name) + " " + this.getTitleWithoutNumber(source.name);
+      //give the source file a temporary name so we can move other files without getting in collision
+      let temporary_path = parent_folder.path + "/" + "temp" + " " + this.getTitleWithoutNumber(source.name);
+      console.log("Temporary name : ", temporary_path);
+      await this.app.fileManager.renameFile(source, temporary_path);
 
+      // Libérer l'espace pour le fichier source
+      console.log("ON LIBERE LA PLACE DU FICHIER SOURCE")
+      console.log("target last number : ", target_file_last_number);
+      this.reorder_files(parent_folder as TFolder, source_file_last_number, target_file_last_number);
+      console.log("Réordonner les fichiers terminé");
 
-        //idée : nom random temporaire sur le file source puis on décale tout les fichiers et enfin on met le fichier source à la bonne place
+      // Renommer le fichier source au nouveau chemin
+      await this.app.fileManager.renameFile(this.app.vault.getAbstractFileByPath(temporary_path), new_path);
+
+      //if file is a folder then rename all the child
+      if (source instanceof TFolder){
+        this.rename_folder_children(source as TFolder, 0);
       }
-      //Cas 2 : dossier différent
-      else {
-        console.log("-------------Different folder-----------------");
-        //Incrémenter de 1 les fichiers dans le dossier cible
-        this.rename_folder_children(parent_folder as TFolder, target_file_last_number);
+    }
+    //Cas 2 : dossier différent
+    else {
+      console.log("-------------Different folder-----------------");
+      //Incrémenter de 1 les fichiers dans le dossier cible
+      this.rename_folder_children(parent_folder as TFolder, target_file_last_number);
 
-        //On récupère le parent du fichier source avant de le déplacer 
-        let source_parent;
-        if (source?.parent != null){
-          source_parent  = this.app.vault.getAbstractFileByPath(source?.parent.path);
+      //On récupère le parent du fichier source avant de le déplacer 
+      let source_parent;
+      if (source?.parent != null){
+        source_parent  = this.app.vault.getAbstractFileByPath(source?.parent.path);
+      }
+
+      //Déplacer le fichier source dans le dossier cible
+      if (target != null && source != null ){
+        new_path = target.parent?.path + "/" + this.getNumber(target.name) + " " + this.getTitleWithoutNumber(source.name);
+        console.log("DEPLACEMENT DU SOURCE FILE DANS LE DOSSIER CIBLE")
+        await this.app.fileManager.renameFile(source, new_path);
+
+        if (source instanceof TFolder){
+          this.rename_folder_children(source as TFolder, 0);
         }
+      } else {
+        console.log("-------------------ERROR-------------------");
+        console.log("Erreur lors du déplacement du fichier source dans le dossier cible");
+      }
 
-        //Déplacer le fichier source dans le dossier cible
-        if (target != null && source != null ){
-          new_path = target.parent?.path + "/" + this.getNumber(target.name) + " " + this.getTitleWithoutNumber(source.name);
-          console.log("DEPLACEMENT DU SOURCE FILE DANS LE DOSSIER CIBLE")
-          await this.app.fileManager.renameFile(source, new_path);
+      console.log("Source file : ", source);
+      console.log("target", target);
+      console.log("new_path", new_path);
+      console.log("insert_new_file done");
 
-          if (source instanceof TFolder){
-            this.rename_folder_children(source as TFolder,0);
-          }
-           
-        else{
-          console.log("-------------------ERROR-------------------");
-          console.log("Erreur lors du déplacement du fichier source dans le dossier cible");
-        }
-        console.log("Source file : ", source);
-        console.log("target", target);
-        console.log("new_path", new_path);
-        console.log("insert_new_file done");
-
-        //Décrémenter de 1 les fichiers dans le dossier source
-        this.rename_folder_children(source_parent as TFolder, (-souce_file_last_number));
-
-
-        /*
-        let new_title = "";
-        //Cas 2.1 : le fichier target est un fichier
-        if (target instanceof TFile) {
-          console.log("CAS 2.1");
-          let match = target.name.match(/^\d+(\.\d+)*\s+/);
-          if (match) {
-            //récupérer le numéro du fichier
-            target_file_last_number = parseInt(match[0]?.trim().split('.').pop() ?? '');
-            console.log("Target file last number : ", target_file_last_number);
-          }
-          console.log("Parent folder : ", parent_folder); 
-          //Pour chaque fichier du dossier + reverse pour commencer par le dernier
-          //console.log("Parent folder children : ", parent_folder.children);
-          let children_list = parent_folder.children.reverse();
-          console.log("-------------------Children list-------------------")
-          //console.log("Children list : ", children_list);
-
-          for (let i = 0; i < children_list.length; i++) {
-            console.log("Children list : ", children_list);
-
-            let file = children_list[i];
-            console.log("-------------------File-------------------")
-            console.log("File : ", file);
-           
-            let file_last_number = this.getLastNumber(file.name);
-            if (file_last_number >= target_file_last_number) {
-
-            let new_name = parent_folder.path + "/" + this.incrementLastNumber(file.name);
-            console.log("File : ", new_name);
-            this.app.fileManager.renameFile(file, new_name);
-            }
-          }
-        }
-
-        //Cas 2.2 : le fichier source est un dossier
-        else {
-          console.log("CAS 2.2");          
-        }*/
-
-      }}
+      //Décrémenter de 1 les fichiers dans le dossier source
+      this.rename_folder_children(source_parent as TFolder, (-source_file_last_number));
+    }
   }
+}
 
-	}
 // Renommer tous les fichiers dans un dossier + tous les sous-dossiers
 rename_folder_children(parent_folder: TFolder, number: number) {
   console.log("-------------------rename_folder_children-------------------");
@@ -435,11 +402,13 @@ rename_folder_children(parent_folder: TFolder, number: number) {
   }
 
   for (let folder of folders) {
+      console.log("folder : ", folder);
       this.rename_folder(folder, number);
   }
 
   // Renommer les fichiers après les sous-dossiers
   for (let file of files) {
+    console.log("file : ", file);
       this.rename_file(file, number);
   }
 }
@@ -485,29 +454,56 @@ rename_file(file: TFile, number: number) {
   if (number == 0 && file.parent != null) {
       console.log("---------------------------- number = 0 ----------------------------");
       new_path = file.parent.path + "/" + this.getNumber(file.parent.name) + "." + this.getLastNumber(file.name) + " " + this.getTitleWithoutNumber(file.name);
-      
   }
   // Cas 2 : Incrémenter les fichiers si besoin
   else if (number > 0 && file_number >= number && file.parent != null) {
     console.log("---------------------------- number > 0 ----------------------------");
     console.log("file.parent.path : ", file.parent.path, "this.incrementLastNumber(file.name) : ", this.incrementLastNumber(file.name));
-      new_path = file.parent.path + "/" + this.incrementLastNumber(file.name);
-      
+    new_path = file.parent.path + "/" + this.incrementLastNumber(file.name);
   }
   // Cas 3 : Décrémenter les fichiers si besoin
   else if (number < 0 && file_number >= (-number) && file.parent != null) {
     console.log("---------------------------- number < 0 ----------------------------");
-      new_path = file.parent.path + "/" + this.decrementLastNumber(file.name);
+    new_path = file.parent.path + "/" + this.decrementLastNumber(file.name);
   }
 
   // Si le chemin du fichier a changé -> le renommer
   if (file.path != new_path) {
-      console.log("Rename file : ", file.path, " to ", new_path);
-      this.app.fileManager.renameFile(file, new_path);
+    console.log("Rename file : ", file.path, " to ", new_path);
+    this.app.fileManager.renameFile(file, new_path);
   }
 }
 
-  
+// Réordonner les fichiers dans le dossier pour libérer l'espace pour le fichier source
+reorder_files(parent_folder: TFolder, source_number: number, target_number: number) {
+  console.log("-------------------reorder_files-------------------");
+  console.log("Parent folder : ", parent_folder);
+  console.log("Source number : ", source_number);
+  console.log("Target number : ", target_number);
+
+  let children = parent_folder.children as TFile[];
+
+  // Si le fichier source est déplacé vers l'avant dans la numérotation
+  if (source_number > target_number) {
+    for (let i = source_number - 1; i >= target_number; i--) {
+      let file = children.find(child => this.getLastNumber(child.name) === i);
+      if (file) {
+        let new_path = parent_folder.path + "/" + this.incrementLastNumber(file.name);
+        this.app.fileManager.renameFile(file, new_path);
+      }
+    }
+  }
+  // Si le fichier source est déplacé vers l'arrière dans la numérotation
+  else {
+    for (let i = source_number + 1; i <= target_number; i++) {
+      let file = children.find(child => this.getLastNumber(child.name) === i);
+      if (file) {
+        let new_path = parent_folder.path + "/" + this.decrementLastNumber(file.name);
+        this.app.fileManager.renameFile(file, new_path);
+      }
+    }
+  }
+}
   
 
   async get_numero_from_file(filepath: TFile): Promise<string | null> {
