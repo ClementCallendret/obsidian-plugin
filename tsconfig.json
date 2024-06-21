@@ -17,10 +17,16 @@
       "ES6",
       "ES7",
       "ES2020"
+    ],
+    "typeRoots": [
+      "./node_modules/@types", 
+      "./@types"
     ]
+
   },
   "include": [
     "**/*.ts",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "@types/**/*.ts"
   ]
 }
