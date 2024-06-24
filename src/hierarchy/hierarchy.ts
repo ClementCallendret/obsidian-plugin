@@ -1,5 +1,4 @@
 import * as Diff from 'diff';
-import { split as sentenceSplitter } from 'sentence-splitter';
 
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import * as fs from 'fs';
@@ -8,29 +7,70 @@ import {App, FileSystemAdapter, TFolder, Notice, TFile } from 'obsidian';
 
 import { get_next_number } from '../utils/utils';
 
+//Comparer les données des fichiers 
+//Si une phrase a été changée, on marque l'entiereté de la phrase
 export async function compareFiles(oldContent: string, newContent: string) {
     try {
+        //TODO Créer des phrases différentes à l'aide des points puis
+        //Utiliser la fonction diffLines sur chaque phrase
+
         //const diff = Diff.diffWords(oldContent, newContent);
-        const oldContent = "Hello World. This is a test.";
-        const newContent = "Hello World. This is a new line. This is a test. ";
-        const diff = Diff.diffWords(oldContent, newContent);
+        let oldContent = (`La ville était calme sous le ciel étoilé.
+Les lumières scintillaient doucement dans la nuit.
+Un chat noir traversa la rue déserte.
+Le vent soufflait légèrement à travers les arbres.
+Des voitures passaient sporadiquement au loin.
+Une brise fraîche apportait une douceur à l'air.
+Les étoiles brillaient intensément dans l'obscurité.
+Les rues pavées semblaient silencieuses et vides.
+Une enseigne clignotait au coin de la rue.
+Un parfum de fleurs flottait dans l'air.`);
+        let newContent = (`La ville était calme sous le ciel étoilé.
+Les lumières scintillaient doucement dans la nuit.
+Un chat noir traversa la rue déserte.
+Le vent soufflait légèrement à travers les arbres.
+Des voitures passaient sporadiquement au loin.
+Une brise fraîche apportait une douceur à l'air.
+Les étoiles brillaient intensément dans l'obscurité.
+Les rues pavées semblaient anciennes et mystérieuses.
+Un vieux piano résonnait depuis un bar voisin.
+Un parfum de café flottait dans la brise nocturne.`);
+
+        console.log('oldContent:', oldContent);
+        console.log('newContent:', newContent);
+
+        oldContent = addNewline(oldContent);
+        newContent = addNewline(newContent);    
+
+        console.log('oldContent:', oldContent);
+        console.log('newContent:', newContent);
+
+        console.log('oldContent:', deleteNewLine(oldContent));
+        console.log('newContent:', deleteNewLine(newContent));
+
+        //const res = Diff.diffLines(oldContent, newContent);
+        //console.log(res);
+
+
+        const diff = Diff.diffLines(oldContent, newContent);
         let textRuns: TextRun[] = [];    
         diff.forEach((part) => {
+            console.log("part", part);
             if (part.added) {
                 textRuns.push(new TextRun({
-                    text: part.value,
+                    text: deleteNewLine("\n" + part.value),
                     highlight: "FFFF00",
                     bold: true
                 }));
             } else if (part.removed) {
                 textRuns.push(new TextRun({
-                    text: part.value,
+                    text: deleteNewLine("\n" + part.value),
                     strike: true,
                     color: "FF0000"
                 }));
             } else {
                 textRuns.push(new TextRun({
-                    text: part.value
+                    text: deleteNewLine("\n" + part.value)
                 }));
             }
         });
@@ -187,7 +227,11 @@ export function getNumber(input: string): string {
     return numberPart;
   }
 
-function getSentences(text: string): string[] {
-    const sentences = sentenceSplitter(text);
-    return sentences.map(sentence => sentence.raw).filter(sentence => sentence.trim().length > 0);
-}
+
+    function addNewline(input: string): string {
+        return input.replace(/\./g, '.\n@@@a');
+    }
+    function deleteNewLine(input: string): string {
+        return input.replace(/\n@@@a/g, '');
+    }
+    
