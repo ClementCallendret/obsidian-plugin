@@ -19,7 +19,8 @@ export default class MyPlugin extends Plugin {
 		  });
 		
 		// This creates an icon in the left ribbon.
-		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', (evt: MouseEvent) => {
+		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
+			await set_order();
 			comparaison();
 			new Notice('Fichier de référence créé !');
 
@@ -35,8 +36,8 @@ export default class MyPlugin extends Plugin {
 			new Notice('Dossier créé !');
 		});
 
-		const ribbonIconE4 = this.addRibbonIcon('folder-sync', 'Synchroniser l\'ordre des fichiers', (evt: MouseEvent) => {
-			set_order();
+		const ribbonIconE4 = this.addRibbonIcon('folder-sync', 'Synchroniser l\'ordre des fichiers', async (evt: MouseEvent) => {
+			await set_order();
 			new Notice('Ordre synchronisé !');
 			});
 		
@@ -102,21 +103,21 @@ export default class MyPlugin extends Plugin {
         this.registerEvent(
             this.app.vault.on('create', async (file: TAbstractFile) => {
                 if (!this.initial_load) {
-                    await set_order();
+                    //await set_order();
 					this.updateExampleView();
                 }
             })
         );
 		this.registerEvent(
             this.app.vault.on('delete', async (file: TAbstractFile) => {
-				await set_order();
+				//await set_order();
 				this.updateExampleView();
             })
         );
 
         this.registerEvent(
             this.app.vault.on('rename', async (file: TAbstractFile) => {
-				await set_order();
+				//await set_order();
                 this.updateExampleView();
             })
         );

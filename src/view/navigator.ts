@@ -1,6 +1,6 @@
 import { ItemView, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import get_ordre_from_file from "../../main";
-
+import { createContextMenu, file_already_open} from "../utils/utils";
 let folder_expand: Set<string> = new Set();
 
 export const VIEW_TYPE_EXAMPLE = "example-view";
@@ -85,6 +85,19 @@ export class ExampleView extends ItemView {
         text: `${treeFile.tfolder.name}`,
       });
 
+        // Ajout du gestionnaire d'événement pour le clic droit (contextmenu)
+        /*
+      listItem.addEventListener("contextmenu", (event) => {
+          event.preventDefault(); // Empêche le menu contextuel par défaut
+          const filePath = listItem.getAttribute("data-path");
+          const type = listItem.getAttribute("data-type");
+
+          // Appel à la fonction createContextMenu avec les données appropriées
+          if (filePath && type) {
+              createContextMenu(event, filePath, type);
+          }
+      });
+*/
       listItem.addEventListener("click", async () => {
         const filePath = listItem.getAttribute("data-path");
         const type = listItem.getAttribute("data-type");
@@ -92,7 +105,11 @@ export class ExampleView extends ItemView {
         if (filePath) {
           if (type === "file") {
             const file = this.app.vault.getAbstractFileByPath(filePath);
-            if (file) {
+            const file_open = file_already_open(filePath);
+            if (file_open) {
+              this.app.workspace.setActiveLeaf(file_open);
+            }
+            else{
               this.app.workspace.openLinkText(filePath, "", true);
             }
           }
@@ -324,8 +341,6 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
         console.log("source_file_last_number : ", source_file_last_number);
         console.log("target_file_last_number : ", target_file_last_number);       
         await this.reorder_files(target_parent_folder, source_file_last_number, target_file_last_number);
-        //Décrementer de 1 les fichiers dans le dossier cible
-        //await this.rename_folder_children(target_parent_folder as TFolder, -(source_file_last_number-1));
         // Renommer le fichier source au nouveau chemin
         console.log("reorder_files done")
         let file_tempo = this.app.vault.getAbstractFileByPath(temporary_path)
@@ -336,6 +351,7 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
           console.log("rename file done");
           let source = this.app.vault.getAbstractFileByPath(new_path);
           if (source instanceof TFolder) {
+            console.log("source is a folder");
             await this.rename_folder_children(source as TFolder, 0);
           }
         };       
@@ -540,12 +556,12 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
         console.log("Rename folder : ", folder.path, " to ", new_path);
         await this.app.fileManager.renameFile(folder, new_path);
         let renamedFolder = this.app.vault.getAbstractFileByPath(new_path) as TFolder;
-        this.rename_folder_children(renamedFolder, 0);
+        await this.rename_folder_children(renamedFolder, 0);
 
     } 
     else {
         // Récursion pour renommer les sous-dossiers et fichiers si pas de changement de nom
-        this.rename_folder_children(folder, number);
+        await this.rename_folder_children(folder, number);
     }
   }
 
@@ -581,54 +597,60 @@ async rename_file(file: TFile, number: number) {
 
 
 // Réordonner les fichiers dans le dossier pour libérer l'espace pour le fichier source
-async reorder_files(parent_folder: TFolder, source_number: number, target_number: number): Promise<void>{
+async reorder_files(parent_folder: TFolder, source_number: number, target_number: number): Promise<void> {
   console.log("-------------------reorder_files-------------------");
   console.log("Parent folder : ", parent_folder);
   console.log("Source number : ", source_number);
   console.log("Target number : ", target_number);
 
-  let children = [...parent_folder.children];
+  // Copie profonde du dossier parent et de ses enfants
+  //const children = parent_folder.children.map(child => ({ ...child }));
+  const children = [... parent_folder.children as TAbstractFile[]];
+
   console.log("Children : ", children);
+
   // Si le fichier source est déplacé vers l'avant dans la numérotation
   if (source_number > target_number) {
-    console.log("IF source_number > target_number");
-    for (const child of children as TAbstractFile[]) {
-      console.log("child : ", child)
-      let child_last_number = this.getLastNumber(child.name);
-      if (child_last_number >= target_number && child_last_number < source_number) {
-        let new_path = parent_folder.path + "/" + this.incrementLastNumber(child.name);
-        console.log("new_path : ", new_path);
-        await this.app.fileManager.renameFile(child, new_path);
+      console.log("IF source_number > target_number");
+      children.reverse();
+      console.log("Children reverse : ", children);
+      for (const child of children as TAbstractFile[]) {
+          console.log("child : ", child);
+          let child_last_number = this.getLastNumber(child.name);
+          if (child_last_number >= target_number && child_last_number < source_number) {
+              let new_path = parent_folder.path + "/" + this.incrementLastNumber(child.name);
+              console.log("new_path : ", new_path);
+              await this.app.fileManager.renameFile(child, new_path);
 
-        //Child est un Folder
-        if (child instanceof TFolder){
-          await this.rename_folder_children(child as TFolder, 0);
-        }
+              // Child est un Folder
+              if (child instanceof TFolder) {
+                  console.log("------------------child is a folder-----------------------");
+                  await this.rename_folder_children(child as TFolder, 0);
+              }
+          }
       }
-    }
   }
   // Si le fichier source est déplacé vers l'arrière dans la numérotation
   else {
-    console.log("IF source_number < target_number");
-    for (const child of children){
-      let child_last_number = this.getLastNumber(child.name);
-      if (child_last_number <= target_number && child_last_number > source_number) {
-        let new_path = parent_folder.path + "/" + this.decrementLastNumber(child.name);
-        console.log("child name", child.name);
-        console.log("new_path : ", new_path);
-        //Child est un File
-        if (child instanceof TFile){
-          await this.app.fileManager.renameFile(child, new_path);
-        }
-        //Child est un Folder
-        else{
-          await this.app.fileManager.renameFile(child, new_path);
-          await this.rename_folder_children(child as TFolder, 0);
-        }
+      console.log("IF source_number < target_number");
+      console.log("Children : ", children)
+      for (const child of children as TAbstractFile[]) {
+          let child_last_number = this.getLastNumber(child.name);
+          if (child_last_number <= target_number && child_last_number > source_number) {
+              let new_path = parent_folder.path + "/" + this.decrementLastNumber(child.name);
+              console.log("child name", child.name);
+              console.log("new_path : ", new_path);
+              await this.app.fileManager.renameFile(child, new_path);
+              // Child est un Folder
+              if (child instanceof TFolder) {
+                  await this.rename_folder_children(child as TFolder, 0);
+              }
+          }
       }
-    }
   }
+  console.log("Children : ", children); 
 }
+
   
 
   async get_numero_from_file(filepath: TFile): Promise<string | null> {

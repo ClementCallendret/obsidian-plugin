@@ -1,4 +1,4 @@
-import { TFile } from "obsidian";
+import {Menu, Notice, TFile, TFolder } from "obsidian";
 import MyPlugin from "../../main";
 
 //Comparer les versions de deux fichiers
@@ -116,7 +116,7 @@ export async function set_numero_from_file(filepath:TFile, new_numero:string){
 //set l'ordre des différents fichiers dans les métadonnées
 export async function set_order(){
     const vault = this.app.vault;
-    const files = vault.getMarkdownFiles().reverse();
+    const files = [...vault.getMarkdownFiles().reverse()];
     let list_file = [];
     for (let i = 0; i < files.length; i++){
         const file = files[i];
@@ -139,6 +139,95 @@ export async function set_ordre_from_file(filepath:TFile, new_ordre:number){
 
 
 
+//Check si le fichier est déjà ouvert : si Oui :  retourne la feuille, si Non : retourne null
+export function file_already_open (filePath : string) {
+    const { workspace } = this.app;
+    const openLeaves = workspace.getLeavesOfType('markdown');
+    for (const leaf of openLeaves) {
+      const viewState = leaf.getViewState();
+      if (viewState.state.file === filePath) {
+        return leaf;
+      }
+    }
+    return null;
+}
+
+
+
+export async function createContextMenu(event: MouseEvent, filePath: string, type: string) {
+    const menu = new Menu();
+  
+    if (type === "file") {    
+        menu.addItem((item) => {
+            item.setTitle("Rename")
+              .setIcon("pencil")
+              .onClick(async () => {
+                const newName = prompt("Enter new name", filePath.split('/').pop());
+                if (newName) {
+                  const file = app.vault.getAbstractFileByPath(filePath);
+                  if (file instanceof TFile) {
+                    const newPath = file.path.split('/').slice(0, -1).concat(newName).join('/');
+                    await app.fileManager.renameFile(file, newPath);
+                    new Notice(`Renamed to ${newName}`);
+                  }
+                }
+              });
+          });
+
+        menu.addItem((item) => {
+            item.setTitle("Delete")
+            .setIcon("trash")
+            .onClick(async () => {
+                const file = app.vault.getAbstractFileByPath(filePath);
+                if (file instanceof TFile && file.parent != null) {
+                    const file_parent = {... file.parent};
+                    const file_name = file.name + "";
+                    console.log("-------------------------------------delete file-------------------------------------");
+                    console.log("file_name", file_name);
+                    //console.log(-(getLastNumber(file_name)));
+                    await app.vault.trash(file, true);
+                    //await rename_folder_children(file_parent as TFolder,-(getLastNumber(file_name)));
+
+                    new Notice(`Deleted ${file.name}`);
+                }
+            });
+        });  
+    } 
+    else if (type === "folder") {
+        menu.addItem((item) => {
+            item.setTitle("Rename")
+            .setIcon("pencil")
+            .onClick(async () => {
+                const newName = prompt("Enter new name", filePath.split('/').pop());
+                if (newName) {
+                const folder = app.vault.getAbstractFileByPath(filePath);
+                if (folder instanceof TFolder) {
+                    const newPath = folder.path.split('/').slice(0, -1).concat(newName).join('/');
+                    await app.fileManager.renameFile(folder, newPath);
+                    new Notice(`Renamed to ${newName}`);
+                }
+                }
+            });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("Delete")
+            .setIcon("trash")
+            .onClick(async () => {
+                const folder = app.vault.getAbstractFileByPath(filePath);
+                if (folder instanceof TFolder && folder.parent != null) {
+                    const folder_parent = {... folder.parent};
+                    const folder_name = folder.name + "";
+                    await app.vault.trash(folder, true);
+                    //await rename_folder_children(folder_parent as TFolder,-(getLastNumber(folder_name)));
+                    new Notice(`Deleted ${folder.name}`);
+                }
+            });
+        });
+    }
+  
+    menu.showAtMouseEvent(event);
+  }
 
 
 
