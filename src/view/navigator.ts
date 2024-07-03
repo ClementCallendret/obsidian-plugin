@@ -3,7 +3,7 @@ import { delete_folder, file_already_open, getLastNumber, rename_folder_children
 
 let folder_expand: Set<string> = new Set();
 
-export const VIEW_TYPE_EXAMPLE = "example-view";
+export const VIEW_TYPE_EXAMPLE = "file-flow";
 
 class TreeFile {
   depth: number;
@@ -17,7 +17,7 @@ class TreeFile {
 
 export class ExampleView extends ItemView {
   private draggedItem: HTMLElement | null = null;
-
+  
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
   }
@@ -27,10 +27,11 @@ export class ExampleView extends ItemView {
   }
 
   getDisplayText() {
-    return "Example view";
+    return "FileFlow";
   }
 
   async onOpen() {
+    this.icon = "folder-open";
     await this.updateFileList();
   }
 
@@ -292,6 +293,8 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
   
 
   async insert_new_file(source_path: string, target_path: string) {
+    console.log("source path", source_path);
+    console.log("target path", target_path);
     let source = this.app.vault.getAbstractFileByPath(source_path);
     let target = this.app.vault.getAbstractFileByPath(target_path);
     let target_file_last_number = 0;
@@ -314,8 +317,17 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
       if (source?.parent == target_parent_folder && target) {
         // Cas 1.1 : le fichier target est un fichier
         // Chemin temporaire pour éviter les collisions
-        let temporary_path = target_parent_folder.path + "/" + "temp" + " " + this.getTitleWithoutNumber(source.name);
-        new_path = target_parent_folder.path + "/" + this.getNumber(target.name)+ " " + this.getTitleWithoutNumber(source.name);
+        //if parent == root
+        let temporary_path = "";
+        if (target_parent_folder.path == "/"){
+          temporary_path = "temp" + " " + this.getTitleWithoutNumber(source.name);
+          new_path = this.getNumber(target.name)+ " " + this.getTitleWithoutNumber(source.name);
+        }
+        else{
+          temporary_path = target_parent_folder.path + "/" + "temp" + " " + this.getTitleWithoutNumber(source.name);
+          new_path = target_parent_folder.path + "/" + this.getNumber(target.name)+ " " + this.getTitleWithoutNumber(source.name);
+        }
+        console.log("temporary_path", temporary_path);
         await this.app.fileManager.renameFile(source, temporary_path);
         
 
@@ -338,16 +350,25 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
         //Incrémenter de 1 les fichiers dans le dossier cible
         await this.rename_folder_children(target_parent_folder as TFolder, target_file_last_number);
         //On récupère le parent du fichier source avant de le déplacer 
-        let source_parent : TAbstractFile | null = null;
+        let source_parent;
         if (source?.parent != null){
-          source_parent  = this.app.vault.getAbstractFileByPath(source?.parent.path);
+          source_parent = {...this.app.vault.getAbstractFileByPath(source?.parent.path)};
         }
 
         //Déplacer le fichier source dans le dossier cible
         if (target != null && source != null ){
+          
+          //cas root
+          let new_path = "";
+          if (target_parent_folder.path == "/"){
+            new_path = "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
 
-          new_path = target.parent?.path + "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
+          }
+          else{
+            new_path = target.parent?.path + "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
+          }
           await this.app.fileManager.renameFile(source, new_path);
+          
           //rafraichir le parent du fichier source
           let new_source_parent;
           
@@ -357,10 +378,11 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
 
           //Décrémenter de 1 les fichiers dans le dossier source
           await this.rename_folder_children(new_source_parent as TFolder, (-source_file_last_number));
-
+          
           if (source instanceof TFolder){
             await this.rename_folder_children(source as TFolder,0);
           }
+            
         }
       }
     }

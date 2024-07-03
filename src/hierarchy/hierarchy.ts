@@ -130,8 +130,11 @@ export async function comparaison(){
       
     final_data = removeDelImage(final_data);
     //On crée le fichier final
-    const files = app.vault.getMarkdownFiles();
-    const digits : number = +await get_next_number('Références', files);
+    const parent_folder = app.vault.getFolderByPath("/Références");
+    let digits = 0;
+    if (parent_folder != null) {
+        digits = +await get_next_number(parent_folder);
+    }
       
     await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
     }
@@ -193,7 +196,11 @@ export async function concatenate_all_notes() {
         }
     }
     //Récupérer le prochain nombre
-    const digits = await get_next_number('Références', files);
+    const parent_folder = app.vault.getFolderByPath("/Références");
+    let digits = 0;
+    if (parent_folder != null) {
+        digits = +await get_next_number(parent_folder);
+    }
 
     //Creation fichier référence
     const ref_newFilePath = `/Références/${digits} Référence.md`;

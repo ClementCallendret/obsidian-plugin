@@ -173,23 +173,27 @@ export default class MyPlugin extends Plugin {
 		}
 		if (activeFile) {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-			const files = this.app.vault.getMarkdownFiles();
-			const digits = await get_next_number(folderPath, files);
-			const newFilePath = `${folderPath}/${digits} Titre${digits}.md`;
-			const id = this.get_id()+1;
-			const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---\n`;		
-			const scenario = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
-			let regle_gestion = `Règles de gestion : \n`;
-			if (num == 1 ){
-				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} | Description |`;
-			} 
-			else{
-				regle_gestion += `	-\n	-\n`
+			const parent_folder = activeFile.parent;
+			if (parent_folder != null){
+				const digits = await get_next_number(parent_folder);
+				console.log("folderPath", folderPath);
+				console.log("digits", digits);
+				const newFilePath = `${folderPath}/${digits} Titre${digits}.md`;
+				const id = this.get_id()+1;
+				const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---\n`;		
+				const scenario = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
+				let regle_gestion = `Règles de gestion : \n`;
+				if (num == 1 ){
+					regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} | Description |`;
+				} 
+				else{
+					regle_gestion += `	-\n	-\n`
+				}
+				console.log('new file path', newFilePath);
+				await this.app.vault.create(newFilePath, metadata + scenario + regle_gestion);
+				await this.set_id(id);
+				this.app.workspace.openLinkText(newFilePath, '', true);
 			}
-			await this.app.vault.create(newFilePath, metadata + scenario + regle_gestion);
-			await this.set_id(id);
-			//await set_order();
-			this.app.workspace.openLinkText(newFilePath, '', true);
 		}
 	}
 
@@ -197,19 +201,22 @@ export default class MyPlugin extends Plugin {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (activeFile) {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-			const files = await this.app.vault.getFiles();
-			const digits = await get_next_number(folderPath, files);
-			const newFolderPath = `${folderPath}/${digits} Fichier`;
-			await this.app.vault.createFolder(newFolderPath);
-			
-	
-			const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
-			let id = this.get_id()+1;
-			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
-			await this.set_id(id);
-			set_ordre_from_file(activeFile, 0);
-	
-			this.app.workspace.openLinkText(newFilePath, '', true);
+			console.log('active file', activeFile);
+			const parentFolder = activeFile.parent;
+			if (parentFolder != null){
+				const digits = await get_next_number(parentFolder);
+				const newFolderPath = `${folderPath}/${digits} Fichier`;
+				await this.app.vault.createFolder(newFolderPath);
+				
+		
+				const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
+				let id = this.get_id()+1;
+				await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
+				await this.set_id(id);
+				set_ordre_from_file(activeFile, 0);
+		
+				this.app.workspace.openLinkText(newFilePath, '', true);
+			}
 		}
 	
 		let id = this.get_id();

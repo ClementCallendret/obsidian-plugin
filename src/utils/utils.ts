@@ -1,4 +1,5 @@
-import {Menu, Notice, TFile, TFolder } from "obsidian";
+import { get } from "http";
+import {Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 
 //Comparer les versions de deux fichiers
 export async function compare_versions(a : TFile, b : TFile): Promise<number> {
@@ -42,45 +43,25 @@ export async function get_id_from_file(filepath:TFile){
 }
 
 //Avoir le prochain numéro de fichier
-export async function get_next_number(parent_folder_path: string, files: TFile[]): Promise<string> {
-    let result = "";
+export async function get_next_number(parent_folder: TFolder): Promise<string> {
+    let parent_number = getNumber(parent_folder.name);
+    console.log("parent_number", parent_number);
+    if (parent_number != ""){
+        parent_number += ".";
+    }
     let last_number = 0;
-
-    for (let i = 0; i < files.length; i++) {
-        let file = files[i];
-        let file_path = file.path;
-        if (file_path.startsWith(parent_folder_path)) {
-            let file_name = file_path.substring(parent_folder_path.length + 1);
-            
-
-            //Si il y a déjà un fichier avec un numéro du dossier
-            let match2 = file_name.match(/^\d+(\.\d+)*\s+/);
-            if (match2) {
-                let number = parseInt(match2[0]?.trim().split('.').pop() ?? '');
-                if (number > last_number) {
-                    last_number = number;
-                }
-            }
-            /*
-            A Garder : ça crée un bug mais ça avait du sens au début
-            //Si c'est le premier fichier du dossier
-            if (last_number != 0) {
-                let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
-                if (match1) {
-                    result = match1[1].slice(0, -1);
-                }
-            }*/
+    let files = [...parent_folder.children];
+    console.log("files", files );
+    for (const file of files) {
+        let file_number = getLastNumber(file.name);
+        if (file_number > last_number) {
+            console.log("file_number", file_number);
+            console.log("last_number", last_number);
+            last_number = file_number;
         }
     }
-    if (last_number == 0) {
-        let parent_folder = this.app.vault.getFolderByPath(parent_folder_path);
-        let match3 = parent_folder?.name.match(/^(.*?)\s[a-zA-Z]/);
-        if (match3) {
-            result = match3[1];
-        }
-    }
-    result = result + (last_number + 1).toString();
-    return result;
+    console.log("number ", parent_number + (last_number + 1).toString());
+    return parent_number + (last_number + 1).toString();
 }
 
 
@@ -250,11 +231,17 @@ export function getLastNumber(input: string): number {
 }
 
 export function getNumber(input: string): string {
-    // Sépare la partie "nombre" de la partie "titre"
-    const [numberPart] = input.split(" ");
-    
-    // Retourne directement la partie "nombre"
-    return numberPart;
+    // Sépare la chaîne d'entrée en deux parties : avant et après le premier espace
+    const [numberPart, ...rest] = input.split(" ");
+
+    // Vérifie si la première partie contient uniquement des nombres et des points
+    const numberRegex = /^[0-9.]+$/;
+    if (numberRegex.test(numberPart)) {
+        return numberPart;
+    }
+
+    // Si ce n'est pas le cas, retourne une chaîne vide
+    return "";
   }
 
 export function getTitleWithoutNumber(input: string): string {

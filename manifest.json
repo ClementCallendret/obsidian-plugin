@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
+	"id": "file-flow",
+	"name": "FileFlow",
+	"version": "0.5.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
+	"description": "FileFlow is a versatile plugin for Obsidian that enhances your note-taking and project management capabilities. It features an intuitive file manager, automatic file hierarchization. Track changes with ease using advanced version comparison, and integrate seamlessly with RedMine for effective ticket management. Simplify your workflow and stay organized with FileFlow.",
+	"author": "callclem",
+	"authorUrl": "https://github.com/ClementCallendret",
 	"fundingUrl": "https://obsidian.md/pricing",
 	"isDesktopOnly": false
 }
