@@ -15,12 +15,10 @@ export default class MyPlugin extends Plugin {
 
 		  this.addRibbonIcon("dice", "Activate view", () => {
 			this.activateView();
-			//this.parcours_profondeur(app.vault.getRoot(), 0);
 		  });
 		
 		// This creates an icon in the left ribbon.
 		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
-			//await set_order();
 			comparaison();
 			new Notice('Fichier de référence créé !');
 
@@ -86,7 +84,6 @@ export default class MyPlugin extends Plugin {
 			id: 'sample-editor-command',
 			name: 'Sample editor command',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
 				editor.replaceSelection('Sample Editor Command');
 			}
 		});
@@ -211,7 +208,6 @@ export default class MyPlugin extends Plugin {
 			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
 			await this.set_id(id);
 			set_ordre_from_file(activeFile, 0);
-			//await set_order();
 	
 			this.app.workspace.openLinkText(newFilePath, '', true);
 		}
@@ -231,7 +227,6 @@ export default class MyPlugin extends Plugin {
 		} else {
 		// Our view could not be found in the workspace, create a new leaf
 		// in the right sidebar for it
-		//leaf = workspace.getRightLeaf(false);
 		leaf = workspace.getLeftLeaf(false);
 		if (leaf) {
 			await leaf.setViewState({ type: VIEW_TYPE_EXAMPLE, active: true });

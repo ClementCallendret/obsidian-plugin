@@ -17,7 +17,6 @@ async function compareMarkdownFiles() {
 
 
     const res = markdownDiff(data1, data2);
-    //console.log(res);
     await app.vault.create('Projet/aDiff.md', res);
 } 
 
@@ -50,26 +49,12 @@ Les rues pavées semblaient anciennes et mystérieuses.
 Un vieux piano résonnait depuis un bar voisin.
 Un parfum de café flottait dans la brise nocturne.`);
 
-        //console.log('oldContent:', oldContent);
-        //console.log('newContent:', newContent);
-
         oldContent = addNewline(oldContent);
         newContent = addNewline(newContent);    
-
-        //console.log('oldContent:', oldContent);
-        //console.log('newContent:', newContent);
-
-        //console.log('oldContent:', deleteNewLine(oldContent));
-        //console.log('newContent:', deleteNewLine(newContent));
-
-        //const res = Diff.diffLines(oldContent, newContent);
-        //console.log(res);
-
 
         const diff = Diff.diffLines(oldContent, newContent);
         let textRuns: TextRun[] = [];    
         diff.forEach((part) => {
-            //console.log("part", part);
             if (part.added) {
                 textRuns.push(new TextRun({
                     text: deleteNewLine("\n" + part.value),
@@ -139,9 +124,6 @@ export async function comparaison(){
     let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
 
     //On compare les fichiers
-    //console.log("last_file_data", last_file_data);
-    //console.log("previous_file_data", previous_file_data);
-    //const final_data = compareFilesData(previous_file_data, last_file_data);
     let final_data = compareFilesData(previous_file_data, last_file_data);
 
     final_data = addNewlinesBeforeTables(final_data);
@@ -212,7 +194,6 @@ export async function concatenate_all_notes() {
     }
     //Récupérer le prochain nombre
     const digits = await get_next_number('Références', files);
-    console.log("-------------------------digits---------------------------------", digits);
 
     //Creation fichier référence
     const ref_newFilePath = `/Références/${digits} Référence.md`;
@@ -243,15 +224,12 @@ async function createFolders(){
     if (root_folder != null){
         for (let i = 0; i < root_folder.length; i++) {
             if (root_folder[i].name == "Références") {
-                console.log("Références existe");
                 reference_folder_created = true;
             }
             if (root_folder[i].name == "Saves") {
-                console.log("Saves existe");
                 saves_folder_created = true;
             }
             if (root_folder[i].name == "Finals") {
-                console.log("Finales existe");
                 final_save_created = true;
             }
         }
@@ -337,7 +315,6 @@ function getLastAndPreviousFile(){
         for (let child of referenceChildList){
             if (child instanceof TFile){
                 let number = Number(getNumber(child.name));
-                //console.log("number",number)
                 if (number > last_number){
                     last_number = number;
                     last_file = child;
@@ -347,7 +324,6 @@ function getLastAndPreviousFile(){
         for (let child of referenceChildList){
             if (child instanceof TFile && child != last_file){
                 let number = Number(getNumber(child.name));
-                //console.log("number",number)
                 if (number > previous_number){
                     previous_number = number;
                     previous_file = child;
