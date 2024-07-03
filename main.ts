@@ -20,23 +20,28 @@ export default class MyPlugin extends Plugin {
 		
 		// This creates an icon in the left ribbon.
 		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
-			await set_order();
+			//await set_order();
 			comparaison();
 			new Notice('Fichier de référence créé !');
 
 		});
 
-		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', (evt: MouseEvent) => {
-			this.create_file();
+		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier 1', (evt: MouseEvent) => {
+			this.create_file(1);
 			new Notice('Fichier créé !');
 		});
 
-		const ribbonIconE3 = this.addRibbonIcon('folder-plus', 'Créer un nouveau dossier', (evt: MouseEvent) => {
+		const ribbonIconE3 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier 2', (evt: MouseEvent) => {
+			this.create_file(2);
+			new Notice('Fichier créé !');
+		});
+
+		const ribbonIconE4 = this.addRibbonIcon('folder-plus', 'Créer un nouveau dossier', (evt: MouseEvent) => {
 			this.create_folder();
 			new Notice('Dossier créé !');
 		});
 
-		const ribbonIconE4 = this.addRibbonIcon('folder-sync', 'Synchroniser l\'ordre des fichiers', async (evt: MouseEvent) => {
+		const ribbonIconE5 = this.addRibbonIcon('folder-sync', 'Synchroniser l\'ordre des fichiers', async (evt: MouseEvent) => {
 			await set_order();
 			new Notice('Ordre synchronisé !');
 			});
@@ -59,6 +64,23 @@ export default class MyPlugin extends Plugin {
 				//new SampleModal(this.app).open();
 			}
 		});
+
+		this.addCommand({
+			id: 'template-1',
+			name: 'Template 1',
+			callback: () => {
+				this.create_file(1);
+			}
+		});
+
+		this.addCommand({
+			id: 'template-2',
+			name: 'Template 2',
+			callback: () => {
+				this.create_file(2);
+			}
+		});
+
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'sample-editor-command',
@@ -147,20 +169,30 @@ export default class MyPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
-	async create_file() {
-		const activeFile = this.app.workspace.getActiveFile();
+	async create_file(num : number) {
+		let activeFile = this.app.workspace.getActiveFile() as TAbstractFile;
+		if (activeFile == null) {
+			activeFile = this.app.vault.getRoot().children[0];
+		}
 		if (activeFile) {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-			const files = await this.app.vault.getMarkdownFiles();
+			const files = this.app.vault.getMarkdownFiles();
 			const digits = await get_next_number(folderPath, files);
 			const newFilePath = `${folderPath}/${digits} Titre${digits}.md`;
 			const id = this.get_id()+1;
-			
-			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---`);
+			const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---\n`;		
+			const scenario = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
+			let regle_gestion = `Règles de gestion : \n`;
+			if (num == 1 ){
+				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} | Description |`;
+			} 
+			else{
+				regle_gestion += `	-\n	-\n`
+			}
+			await this.app.vault.create(newFilePath, metadata + scenario + regle_gestion);
 			await this.set_id(id);
-			await set_order();
-	
-			await this.app.workspace.openLinkText(newFilePath, '', true);
+			//await set_order();
+			this.app.workspace.openLinkText(newFilePath, '', true);
 		}
 	}
 
@@ -179,7 +211,7 @@ export default class MyPlugin extends Plugin {
 			await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
 			await this.set_id(id);
 			set_ordre_from_file(activeFile, 0);
-			await set_order();
+			//await set_order();
 	
 			this.app.workspace.openLinkText(newFilePath, '', true);
 		}

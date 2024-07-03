@@ -3,12 +3,9 @@ import MyPlugin from "../../main";
 
 //Comparer les versions de deux fichiers
 export async function compare_versions(a : TFile, b : TFile): Promise<number> {
-    console.log("a : ", a);
-    console.log("b : ", b); 
     const num_a = await get_numero_from_file(a);
     const num_b = await get_numero_from_file(b);
-    console.log("num_a : ", num_a);
-    console.log("num_b : ", num_b);
+
     if (num_a === null || num_b === null) {
         return 0;
     }
@@ -61,32 +58,34 @@ export async function get_next_number(parent_folder_path: string, files: TFile[]
             //Si il y a déjà un fichier avec un numéro du dossier
             let match2 = file_name.match(/^\d+(\.\d+)*\s+/);
             if (match2) {
-                console.log("Match2 : ", match2);
                 let number = parseInt(match2[0]?.trim().split('.').pop() ?? '');
                 if (number > last_number) {
                     last_number = number;
                 }
             }
+            /*
             //Si c'est le premier fichier du dossier
             if (last_number != 0) {
                 let match1 = file_name.match(/^(.*?)\s[a-zA-Z]/);
                 if (match1) {
                     result = match1[1].slice(0, -1);
                 }
-            }
+            }*/
         }
     }
     if (last_number == 0) {
         let parent_folder = this.app.vault.getFolderByPath(parent_folder_path);
-        console.log("parent folder : ", parent_folder);
         let match3 = parent_folder?.name.match(/^(.*?)\s[a-zA-Z]/);
         if (match3) {
             result = match3[1];
         }
     }
+    console.log("Result : ", result);
+    console.log("Last number : ", last_number);
     result = result + (last_number + 1).toString();
     return result;
 }
+
 
 //Récupérer le numéro des métadonnées
 export async function get_numero_from_file(filepath:TFile){
@@ -154,83 +153,203 @@ export function file_already_open (filePath : string) {
 
 
 
-export async function createContextMenu(event: MouseEvent, filePath: string, type: string) {
-    const menu = new Menu();
-  
-    if (type === "file") {    
-        menu.addItem((item) => {
-            item.setTitle("Rename")
-              .setIcon("pencil")
-              .onClick(async () => {
-                const newName = prompt("Enter new name", filePath.split('/').pop());
-                if (newName) {
-                  const file = app.vault.getAbstractFileByPath(filePath);
-                  if (file instanceof TFile) {
-                    const newPath = file.path.split('/').slice(0, -1).concat(newName).join('/');
-                    await app.fileManager.renameFile(file, newPath);
-                    new Notice(`Renamed to ${newName}`);
-                  }
-                }
-              });
-          });
 
-        menu.addItem((item) => {
-            item.setTitle("Delete")
-            .setIcon("trash")
-            .onClick(async () => {
-                const file = app.vault.getAbstractFileByPath(filePath);
-                if (file instanceof TFile && file.parent != null) {
-                    const file_parent = {... file.parent};
-                    const file_name = file.name + "";
-                    console.log("-------------------------------------delete file-------------------------------------");
-                    console.log("file_name", file_name);
-                    //console.log(-(getLastNumber(file_name)));
-                    await app.vault.trash(file, true);
-                    //await rename_folder_children(file_parent as TFolder,-(getLastNumber(file_name)));
 
-                    new Notice(`Deleted ${file.name}`);
-                }
-            });
-        });  
-    } 
-    else if (type === "folder") {
-        menu.addItem((item) => {
-            item.setTitle("Rename")
-            .setIcon("pencil")
-            .onClick(async () => {
-                const newName = prompt("Enter new name", filePath.split('/').pop());
-                if (newName) {
-                const folder = app.vault.getAbstractFileByPath(filePath);
-                if (folder instanceof TFolder) {
-                    const newPath = folder.path.split('/').slice(0, -1).concat(newName).join('/');
-                    await app.fileManager.renameFile(folder, newPath);
-                    new Notice(`Renamed to ${newName}`);
-                }
-                }
-            });
-        });
-
-        menu.addItem((item) => {
-            item.setTitle("Delete")
-            .setIcon("trash")
-            .onClick(async () => {
-                const folder = app.vault.getAbstractFileByPath(filePath);
-                if (folder instanceof TFolder && folder.parent != null) {
-                    const folder_parent = {... folder.parent};
-                    const folder_name = folder.name + "";
-                    await app.vault.trash(folder, true);
-                    //await rename_folder_children(folder_parent as TFolder,-(getLastNumber(folder_name)));
-                    new Notice(`Deleted ${folder.name}`);
-                }
-            });
-        });
+export async function delete_folder(folder : TFolder){
+    let children = folder.children;
+    for (let child of children) {
+        if (child instanceof TFolder) {
+            await delete_folder(child);
+        } else if (child instanceof TFile) {
+            await app.vault.trash(child, true);
+        }
     }
-  
-    menu.showAtMouseEvent(event);
+    await app.vault.trash(folder, true);
+}
+
+
+  // Renommer tous les fichiers dans un dossier + tous les sous-dossiers
+  export async function  rename_folder_children(parent_folder: TFolder, number: number) : Promise<void>{
+    //console.log("-------------------rename_folder_children-------------------");
+    //console.log("Parent folder : ", parent_folder);
+    //console.log("Number : ", number);
+
+    let children = parent_folder.children;
+    
+    // Séparer les dossiers et les fichiers
+    let folders = [...children.filter(child => child instanceof TFolder) as TFolder[]];
+    let files = [...children.filter(child => child instanceof TFile) as TFile[]];
+
+    // Renommer les sous-dossiers en premier pour éviter les conflits de noms
+    if (number > 0) {
+        folders.reverse();
+        files.reverse();
+    }
+
+    for (let folder of folders) {
+        await rename_folder(folder, number);
+    }
+
+    // Renommer les fichiers après les sous-dossiers
+    for (let file of files) {
+        await rename_file(file, number);
+    }
   }
 
+export async function rename_folder(folder: TFolder, number: number) {
+    let folder_number = getLastNumber(folder.name);
+    let new_path = folder.path;
 
+    // Cas 1 : le dossier est contenu dans un dossier qui s'est fait renommer
+    if (number == 0 && folder.parent != null) {
+        //console.log("---------------------------- number = 0 ----------------------------");
+        new_path = folder.parent.path + "/" + getNumber(folder.parent.name) + "." + getLastNumber(folder.name) + " " + getTitleWithoutNumber(folder.name);
+    }
+    // Cas 2 : Incrémenter les dossiers si besoin
+    else if (number > 0 && folder_number >= number && folder.parent != null) {
+        //console.log("---------------------------- number > 0 ----------------------------");
+        new_path = folder.parent.path + "/" + incrementLastNumber(folder.name);
+    }
+    // Cas 3 : Décrémenter les dossiers si besoin
+    else if (number < 0 && folder_number >= (-number) && folder.parent != null) {
+        //console.log("---------------------------- number < 0 ----------------------------");
+        new_path = folder.parent.path + "/" + decrementLastNumber(folder.name);
+    }
 
+    // Si le chemin du dossier a changé -> le renommer
+    if (folder.path != new_path) {
+        //console.log("Rename folder : ", folder.path, " to ", new_path);
+        await this.app.fileManager.renameFile(folder, new_path);
+        let renamedFolder = this.app.vault.getAbstractFileByPath(new_path) as TFolder;
+        await rename_folder_children(renamedFolder, 0);
 
+    } 
+    else {
+        // Récursion pour renommer les sous-dossiers et fichiers si pas de changement de nom
+        await rename_folder_children(folder, number);
+    }
+  }
 
+export async function rename_file(file: TFile, number: number) {
+  let file_number = getLastNumber(file.name);
+  let new_path = file.path;
+  //console.log("file_number : ", file_number);
+  // Cas 1 : le fichier est contenu dans un dossier qui s'est fait renommer
+  if (number == 0 && file.parent != null) {
+     // console.log("---------------------------- number = 0 ----------------------------");
+      new_path = file.parent.path + "/" + getNumber(file.parent.name) + "." + getLastNumber(file.name) + " " + getTitleWithoutNumber(file.name);
+      
+  }
+  // Cas 2 : Incrémenter les fichiers si besoin
+  else if (number > 0 && file_number >= number && file.parent != null) {
+   // console.log("---------------------------- number > 0 ----------------------------");
+   // console.log("file.parent.path : ", file.parent.path, "this.incrementLastNumber(file.name) : ", incrementLastNumber(file.name));
+    new_path = file.parent.path + "/" + incrementLastNumber(file.name);
+  }
+  // Cas 3 : Décrémenter les fichiers si besoin
+  else if (number < 0 && file_number >= (-number) && file.parent != null) {
+    //console.log("---------------------------- number < 0 ----------------------------");
+      new_path = file.parent.path + "/" + decrementLastNumber(file.name);
+  }
 
+  // Si le chemin du fichier a changé -> le renommer
+  //console.log("file.path : ", file.path, "new_path : ", new_path);
+  if (file.path != new_path) {
+      //console.log("Rename file : ", file.path, " to ", new_path);
+      await this.app.fileManager.renameFile(file, new_path);
+  }
+}
+
+export function getLastNumber(input: string): number {
+    // Sépare la partie "nombre" de la partie "titre"
+    const [numberPart] = input.split(" ");
+    
+    // Sépare les nombres par les points
+    const numberArray = numberPart.split(".");
+    
+    // Récupère le dernier élément du tableau
+    const lastNumber = numberArray.pop();
+    
+    // Convertit en nombre
+    return lastNumber ? parseFloat(lastNumber) : NaN;
+}
+
+export function getNumber(input: string): string {
+    // Sépare la partie "nombre" de la partie "titre"
+    const [numberPart] = input.split(" ");
+    
+    // Retourne directement la partie "nombre"
+    return numberPart;
+  }
+
+export function getTitleWithoutNumber(input: string): string {
+    // Trouve l'indice du premier espace
+    const spaceIndex = input.indexOf(" ");
+    
+    // Retourne la partie après le premier espace
+    if (spaceIndex !== -1) {
+        return input.substring(spaceIndex + 1);
+    } else {
+        // Si aucun espace n'est trouvé, retourne la chaîne complète
+        return input;
+    }
+  }
+
+export function incrementLastNumber(input: string): string {
+    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex pour capturer le dernier nombre
+    const match = input.match(regex);
+
+    if (!match) {
+        // Aucun nombre trouvé à la fin, retourner l'entrée telle quelle
+        return input;
+    }
+
+    const numPart = match[1]; // Partie contenant le nombre
+    const restPart = match[3] ?? ""; // Partie restante après le nombre, si présente
+
+    const numParts = numPart.split('.'); // Séparer les parties du nombre par les points
+    const lastNum = parseInt(numParts.pop()!); // Extraire et convertir le dernier nombre en entier
+
+    if (isNaN(lastNum)) {
+        // Si le dernier nombre n'est pas un nombre valide, retourner l'entrée telle quelle
+        return input;
+    }
+
+    const incrementedNum = lastNum + 1; // Incrémenter le dernier nombre
+
+    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); // Reconstruire la partie nombre
+
+    // Reconstruire la chaîne avec le nombre incrémenté et le reste de la chaîne
+
+    let res = newNumPart + restPart;
+    return res.replace(/^\.+/, '');
+}
+
+export function decrementLastNumber(input: string): string {
+    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex pour capturer le dernier nombre
+    const match = input.match(regex);
+
+    if (!match) {
+        // Aucun nombre trouvé à la fin, retourner l'entrée telle quelle
+        return input;
+    }
+
+    const numPart = match[1]; // Partie contenant le nombre
+    const restPart = match[3] ?? ""; // Partie restante après le nombre, si présente
+
+    const numParts = numPart.split('.'); // Séparer les parties du nombre par les points
+    const lastNum = parseInt(numParts.pop()!); // Extraire et convertir le dernier nombre en entier
+
+    if (isNaN(lastNum)) {
+        // Si le dernier nombre n'est pas un nombre valide, retourner l'entrée telle quelle
+        return input;
+    }
+
+    const incrementedNum = lastNum - 1; // Décrémenter le dernier nombre
+
+    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); // Reconstruire la partie nombre
+
+    // Reconstruire la chaîne avec le nombre incrémenté et le reste de la chaîne
+    let res = newNumPart + restPart;
+    return res.replace(/^\.+/, '');
+}

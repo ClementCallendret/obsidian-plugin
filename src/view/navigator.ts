@@ -1,7 +1,10 @@
-import { ItemView, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import { ItemView,Menu, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import get_ordre_from_file from "../../main";
-import { createContextMenu, file_already_open} from "../utils/utils";
+import { delete_folder, file_already_open, getLastNumber, rename_folder_children} from "../utils/utils";
+import { createIcons, icons } from 'lucide';
+
 let folder_expand: Set<string> = new Set();
+createIcons({ icons });
 
 export const VIEW_TYPE_EXAMPLE = "example-view";
 
@@ -31,7 +34,7 @@ export class ExampleView extends ItemView {
   }
 
   async onOpen() {
-    this.updateFileList();
+    await this.updateFileList();
   }
 
   async onClose() {
@@ -86,18 +89,21 @@ export class ExampleView extends ItemView {
       });
 
         // Ajout du gestionnaire d'événement pour le clic droit (contextmenu)
-        /*
-      listItem.addEventListener("contextmenu", (event) => {
+        
+      listItem.addEventListener("contextmenu", async (event) => {
           event.preventDefault(); // Empêche le menu contextuel par défaut
           const filePath = listItem.getAttribute("data-path");
           const type = listItem.getAttribute("data-type");
 
           // Appel à la fonction createContextMenu avec les données appropriées
           if (filePath && type) {
-              createContextMenu(event, filePath, type);
-          }
+              await this.createContextMenu(event, filePath, type);
+              console.log("delete folder or file");
+              await this.updateFileList();
+            }
+
       });
-*/
+
       listItem.addEventListener("click", async () => {
         const filePath = listItem.getAttribute("data-path");
         const type = listItem.getAttribute("data-type");
@@ -121,8 +127,8 @@ export class ExampleView extends ItemView {
             } else {
               folder_expand.add(folder.path);
             }
-            await this.updateFileList();
           }
+        await this.updateFileList();
         }
       });
 
@@ -799,6 +805,49 @@ getNumber(input: string): string {
     }
     return false;
   }
+
+
+
+  async createContextMenu(event: MouseEvent, filePath: string, type: string) {
+    const menu = new Menu();
+    console.log("createContextMenu");
+    if (type === "file") {    
+        menu.addItem((item) => {
+            item.setTitle("Delete")
+            .setIcon("trash")
+            .onClick(async () => {
+                const file = app.vault.getAbstractFileByPath(filePath);
+                if (file instanceof TFile && file.parent != null) {
+                    const file_parent = {... file.parent};
+                    const file_name = file.name + "";
+                    console.log("-------------------------------------delete file-------------------------------------");
+                    console.log("file_name", file_name);
+                    //console.log(-(getLastNumber(file_name)));
+                    await app.vault.trash(file, true);
+                    await rename_folder_children(file_parent as TFolder,-(getLastNumber(file_name)));
+
+                    new Notice(`Deleted ${file.name}`);
+                }
+            });
+        });  
+    } 
+    else if (type === "folder") {
+        menu.addItem((item) => {
+            item.setTitle("Delete")
+            .setIcon("trash")
+            .onClick(async () => {
+                const folder = app.vault.getAbstractFileByPath(filePath);
+                if (folder instanceof TFolder && folder.parent != null) {
+                    const folder_parent = {... folder.parent};
+                    const folder_name = folder.name + "";
+                    await delete_folder(folder as TFolder);
+                    await rename_folder_children(folder_parent as TFolder,-(getLastNumber(folder_name)));
+                    await this.updateFileList();
+                    new Notice(`Deleted ${folder.name}`);
+                }
+            });
+        });
+    }
+    menu.showAtMouseEvent(event);
+  }
 }
-
-

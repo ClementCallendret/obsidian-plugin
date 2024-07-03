@@ -1,15 +1,29 @@
 import * as Diff from 'diff';
+import { markdownDiff } from 'markdown-diff';
 
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import * as fs from 'fs';
-import {App, FileSystemAdapter, TFolder, Notice, TFile } from 'obsidian';
-
+import {App, FileSystemAdapter, TFolder, Notice, TFile, Vault } from 'obsidian';
+import {get_id_from_file} from '../utils/utils';
 
 import { get_next_number } from '../utils/utils';
 
+async function compareMarkdownFiles() {
+    const file1 = await app.vault.getAbstractFileByPath('Projet/1 Titre1.md');
+    const file2 = await app.vault.getAbstractFileByPath('Projet/2 Titre2.md');
+
+    const data1 = await app.vault.read(file1 as TFile);
+    const data2 = await app.vault.read(file2 as TFile);
+
+
+    const res = markdownDiff(data1, data2);
+    //console.log(res);
+    await app.vault.create('Projet/aDiff.md', res);
+} 
+
 //Comparer les données des fichiers 
 //Si une phrase a été changée, on marque l'entiereté de la phrase
-export async function compareFiles(oldContent: string, newContent: string) {
+export async function compareString(oldContent: string, newContent: string) {
     try {
         //TODO Créer des phrases différentes à l'aide des points puis
         //Utiliser la fonction diffLines sur chaque phrase
@@ -36,17 +50,17 @@ Les rues pavées semblaient anciennes et mystérieuses.
 Un vieux piano résonnait depuis un bar voisin.
 Un parfum de café flottait dans la brise nocturne.`);
 
-        console.log('oldContent:', oldContent);
-        console.log('newContent:', newContent);
+        //console.log('oldContent:', oldContent);
+        //console.log('newContent:', newContent);
 
         oldContent = addNewline(oldContent);
         newContent = addNewline(newContent);    
 
-        console.log('oldContent:', oldContent);
-        console.log('newContent:', newContent);
+        //console.log('oldContent:', oldContent);
+        //console.log('newContent:', newContent);
 
-        console.log('oldContent:', deleteNewLine(oldContent));
-        console.log('newContent:', deleteNewLine(newContent));
+        //console.log('oldContent:', deleteNewLine(oldContent));
+        //console.log('newContent:', deleteNewLine(newContent));
 
         //const res = Diff.diffLines(oldContent, newContent);
         //console.log(res);
@@ -55,7 +69,7 @@ Un parfum de café flottait dans la brise nocturne.`);
         const diff = Diff.diffLines(oldContent, newContent);
         let textRuns: TextRun[] = [];    
         diff.forEach((part) => {
-            console.log("part", part);
+            //console.log("part", part);
             if (part.added) {
                 textRuns.push(new TextRun({
                     text: deleteNewLine("\n" + part.value),
@@ -74,7 +88,7 @@ Un parfum de café flottait dans la brise nocturne.`);
                 }));
             }
         });
-
+        /*
         let paragraph = new Paragraph({
             children: textRuns
         });
@@ -103,39 +117,227 @@ Un parfum de café flottait dans la brise nocturne.`);
         const buffer = await Packer.toBuffer(doc);
         fs.writeFileSync(absolutePath + "/DocWordddd.docx", buffer);
         new Notice(`Document Word généré : ${absolutePath}`);
+         */
     } catch (error) {
         console.error('Erreur lors de la génération du document Word :', error);
         new Notice('Erreur lors de la génération du document Word. Vérifiez la console pour plus de détails.');
     }
+       
+}
+
+//Comparer les fichiers
+export async function comparaison(){
+    //Création des dossiers
+    await createFolders();
+    //creation du fichier de référence et de sa version pour la comparaison
+    await concatenate_all_notes();
+
+    let LastAndPrevious = getLastAndPreviousFile();
+    
+    //On lit les fichiers
+    let last_file_data = await app.vault.read(LastAndPrevious.lastfile as TFile);
+    let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
+
+    //On compare les fichiers
+    //console.log("last_file_data", last_file_data);
+    //console.log("previous_file_data", previous_file_data);
+    //const final_data = compareFilesData(previous_file_data, last_file_data);
+    let final_data = compareFilesData(previous_file_data, last_file_data);
+
+    final_data = addNewlinesBeforeTables(final_data);
+      
+    final_data = removeDelImage(final_data);
+    //On crée le fichier final
+    const files = app.vault.getMarkdownFiles();
+    const digits : number = +await get_next_number('Références', files);
+      
+    await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
+    }
+
+
+
+function compareFilesData(file1 : string, file2 : string): string{
+    //init res
+    let texteFinal = '';
+
+    //On récupère les ID des parties
+    let list_id_file1 = extractNumbers(file1);
+    let list_id_file2 = extractNumbers(file2);
+
+    for (let id1 of list_id_file1){
+        //Si partie déjà existante
+        if (list_id_file2.includes(id1)){
+            //On récupère les parties
+            let part1 = extractFileContent(file1, id1.toString());
+            let part2 = extractFileContent(file2, id1.toString());
+            //On compare les deux parties
+            if (part1 != null && part2 != null){
+                //texteFinal += compareString(part1, part2);
+                texteFinal += markdownDiff(part1, part2);
+            }
+        }
+        else{
+            texteFinal += extractFileContent(file1, id1.toString());
+        }
+        texteFinal += '\n';
+    }
+    return texteFinal;
+}
+
+export async function concatenate_all_notes() {
+    const vault = this.app.vault;
+    const files = vault.getMarkdownFiles().reverse();
+
+    const meta_file = `---\nid:`;
+    const nb_files = files.length;
+
+    let content_ref = '';
+    let content_save = '';
+    let id_list  = [];
+    let notes = new Array(nb_files).fill(0);
+
+    for (const file of files){
+        if (!file.path.startsWith('Références') && !file.path.startsWith('Saves') && !file.path.startsWith('Finals')) {
+            let data = await vault.read(file);
+            let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
+            let data_wt_meta = match ? match[1] : null;
+
+            const id = await get_id_from_file(file);
+            id_list.push(id);
+            content_save += `@@@@@@@@@@\n${id}\n@@@@@@@@@@\n`;
+
+            content_ref += `## ${file.basename}\n${data_wt_meta}\n\n`;
+            content_save += `## ${file.basename}\n${data_wt_meta}\n\n`;
+        }
+    }
+    //Récupérer le prochain nombre
+    const digits = await get_next_number('Références', files);
+    console.log("-------------------------digits---------------------------------", digits);
+
+    //Creation fichier référence
+    const ref_newFilePath = `/Références/${digits} Référence.md`;
+    await vault.create(ref_newFilePath, content_ref);		
+
+    //Creation fichier save
+    const save_newFilePath = `Saves/${digits} Save.md`;
+    await vault.create(save_newFilePath, id_list + '\n' + content_save);
+    await this.app.workspace.openLinkText(save_newFilePath, '', true);
+}
+
+//get number from file name
+export function getNumber(input: string): string {
+    // Sépare la partie "nombre" de la partie "titre"
+    const [numberPart] = input.split(" ");
+    
+    // Retourne directement la partie "nombre"
+    return numberPart;
+  }
+
+async function createFolders(){
+    //Nom du fichier
+    let vault = app.vault;
+    const root_folder = vault.getFolderByPath("/")?.children;
+    let reference_folder_created = false;
+    let saves_folder_created = false;
+    let final_save_created = false;
+    if (root_folder != null){
+        for (let i = 0; i < root_folder.length; i++) {
+            if (root_folder[i].name == "Références") {
+                console.log("Références existe");
+                reference_folder_created = true;
+            }
+            if (root_folder[i].name == "Saves") {
+                console.log("Saves existe");
+                saves_folder_created = true;
+            }
+            if (root_folder[i].name == "Finals") {
+                console.log("Finales existe");
+                final_save_created = true;
+            }
+        }
+    }
+    if (!reference_folder_created) {
+        await vault.createFolder("Références");
+    }
+    if (!saves_folder_created) {
+        await vault.createFolder("Saves");
+    }
+    if(!final_save_created){
+        await vault.createFolder("Finals");
+    }
+
+}
+function addNewline(input: string): string {
+    return input.replace(/\./g, '.\n@@@a');
+}
+function deleteNewLine(input: string): string {
+    return input.replace(/\n@@@a/g, '');
+}
+
+//get list of numbers from a file content
+function extractNumbers(input: string): number[] {
+    const parts = input.split('\n');
+    if (parts.length < 2 || parts[1] !== '@@@@@@@@@@') {
+        throw new Error('Invalid format');
+    }
+    const numberPart = parts[0];
+    const numberStrings = numberPart.split(',').map(str => str.trim());
+    return numberStrings.map(str => {
+        const num = parseFloat(str);
+        if (isNaN(num)) {
+            throw new Error(`Invalid number: ${str}`);
+        }
+        return num;
+    });
+}
+
+//get content of a file from its id
+function extractFileContent(data: string, fileId: string): string | null {
+    // Split the data by the delimiter
+    const sections = data.split('@@@@@@@@@@');
+
+    // Iterate over the sections to find the file with the given ID
+    for (let i = 1; i < sections.length; i++) {
+        const section = sections[i].trim();
+        // Check if the section starts with the file ID
+        if (section.startsWith(fileId)) {
+            // Return the content of the file (the next section)
+            if (i + 1 < sections.length) {
+                return sections[i + 1].trim();
+            }
+        }
+    }
+
+    // If the file ID was not found, return null
+    return null;
 }
 
 
-export async function comparaison(){
-    //creation du fichier de référence
-    await concatenate_all_notes();
-
-
-    let root = app.vault.getRoot();
+//get the last and previous file
+function getLastAndPreviousFile(){
     let reference = null ;
-    //On récupère le chemin du dossier Références
+    let root = app.vault.getRoot();
+    //On récupère le chemin du dossier Saves
     for (let child of root.children){
-        if (child instanceof TFolder && child.name === 'Références'){
+        if (child instanceof TFolder && child.name === 'Saves'){
             reference = child;
             break;
         }
     }
-    
+
     //On récupère les deux derniers fichiers
-    let last_file = null;
+    let last_file : TFile|null = null;
     let previous_file = null;
     if (reference != null && reference.children.length >= 2){
         let referenceChildList = reference.children;
         let last_number = 2;
         let previous_number = 1;
+
+        //Optimiser la recherche : comme avant mais en copiant la var
         for (let child of referenceChildList){
             if (child instanceof TFile){
                 let number = Number(getNumber(child.name));
-                console.log("number",number)
+                //console.log("number",number)
                 if (number > last_number){
                     last_number = number;
                     last_file = child;
@@ -145,93 +347,40 @@ export async function comparaison(){
         for (let child of referenceChildList){
             if (child instanceof TFile && child != last_file){
                 let number = Number(getNumber(child.name));
-                console.log("number",number)
+                //console.log("number",number)
                 if (number > previous_number){
                     previous_number = number;
                     previous_file = child;
                 }
             }
         }
-        //On lit les fichiers
-        let last_file_data = await app.vault.read(last_file as TFile);
-        let previous_file_data = await app.vault.read(previous_file as TFile);
-
-        //On compare les fichiers
-        compareFiles(previous_file_data, last_file_data);
-    }
+    }   
     else{
         new Notice('Pas assez de fichiers pour comparer');
     }
-
-} 
-
-export async function concatenate_all_notes() {
-    const vault = this.app.vault;
-    const files = vault.getMarkdownFiles();
-
-    const meta_file = `---\nid:`;
-    const nb_files = files.length;
-
-    let content = '';
-    let notes = new Array(nb_files).fill(0);
-
-    //Remise en ordre
-    for (let i = nb_files - 1; i > -1; i--) {
-        let file = files[i];
-        let data = await vault.read(file);
-        if (data.startsWith(meta_file)) {
-            let match = /ordre:\s*(\d+)/.exec(data);
-            if (match) {
-                let ordre = parseInt(match[1]);
-                notes[ordre] = file;
-            }
-        }
-    }
-    //Concaténation
-    for (let j = 0; j < nb_files; j++) {
-        let file = notes[j];
-        if (file != 0) {
-            let data = await vault.read(file);
-            let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
-            let data_wt_meta = match ? match[1] : null;
-
-            content += `## ${file.basename}\n${data_wt_meta}\n\n`;
-        }
-    }
-    //Nom du fichier
-    const root_folder = vault.getFolderByPath("/")?.children;
-    let reference_folder_created = false;
-    if (root_folder != null){
-        for (let i = 0; i < root_folder.length; i++) {
-            if (root_folder[i].name == "Références") {
-                console.log("Références existe");
-                reference_folder_created = true;
-            }
-        }
-    }
-    if (!reference_folder_created) {
-        vault.createFolder("Références");
-    }
-    const digits = await get_next_number('Références', files);
-    const newFilePath = `/Références/${digits} Référence.md`;
-    await vault.create(newFilePath, content);		
-    this.app.workspace.openLinkText(newFilePath, '', true);
-
+    let res = {lastfile : last_file, previousfile : previous_file};
+    return res;
 }
 
-export function getNumber(input: string): string {
-    // Sépare la partie "nombre" de la partie "titre"
-    const [numberPart] = input.split(" ");
-    
-    // Retourne directement la partie "nombre"
-    return numberPart;
-  }
+function addNewlinesBeforeTables(markdown: string): string {
+    const lines = markdown.split(/\r?\n/);
+    const result = [];
 
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Vérifier si la ligne actuelle est le début d'un tableau et la ligne précédente n'est pas vide
+        if (line.startsWith('|') && i > 0 && lines[i - 1].trim() !== '' && !lines[i - 1].startsWith('|')) {
+            result.push('');
+        }
 
-    function addNewline(input: string): string {
-        return input.replace(/\./g, '.\n@@@a');
+        result.push(line);
     }
-    function deleteNewLine(input: string): string {
-        return input.replace(/\n@@@a/g, '');
-    }
-    
+
+    return result.join('\n');
+}
+
+function removeDelImage(str: string): string {
+    // Utilise une expression régulière pour trouver et supprimer les éléments encadrés par <del>...</del>
+    return str.replace(/<del>!\[\[.*?\]\]<\/del>/g, '');
+}
