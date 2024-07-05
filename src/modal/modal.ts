@@ -1,4 +1,5 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
+
 // Classe pour créer la fenêtre modale
 class TemplateModal extends Modal {
     onTemplateSelected: (templateNumber: number) => void;
@@ -12,6 +13,9 @@ class TemplateModal extends Modal {
         const { contentEl } = this;
         // Titre de la fenêtre modale
         contentEl.createEl('h2', { text: 'Sélectionnez un template' });
+
+        // Container pour les templates en grille
+        const gridContainer = contentEl.createEl('div', { cls: 'template-grid-container' });
 
         // Templates previews
         const templates = [
@@ -151,20 +155,17 @@ class TemplateModal extends Modal {
 
         // Ajout des boutons avec prévisualisation pour les 4 templates
         templates.forEach((template, index) => {
-            const setting = new Setting(contentEl)
-                .setName(template.title);
+            const templateCard = gridContainer.createEl('div', { cls: 'template-card' });
 
-            const previewEl = setting.descEl.createEl('div');
+            const titleEl = templateCard.createEl('h3', { text: template.title });
+            const previewEl = templateCard.createEl('div', { cls: 'template-preview' });
             previewEl.innerHTML = template.preview;
 
-            setting.addButton(button => {
-                button
-                    .setButtonText(`Sélectionner ${template.title}`)
-                    .onClick(() => {
-                        this.onTemplateSelected(index + 1);
-                        this.close();
-                    });
-            });
+            const button = templateCard.createEl('button', { text: `Sélectionner ${template.title}` });
+            button.onclick = () => {
+                this.onTemplateSelected(index + 1);
+                this.close();
+            };
         });
     }
 
