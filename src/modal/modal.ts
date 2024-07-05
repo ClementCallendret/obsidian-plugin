@@ -200,13 +200,10 @@ class TemplateModal extends Modal {
 // Méthode pour ouvrir la fenêtre modale
 export function openTemplateModal(app: App) {
     new TemplateModal(app, (templateNumber: number) => {
-        // Appelez votre méthode pour ouvrir le template ici
         openTemplate(templateNumber);
     }).open();
 }
 
-// Exemple de méthode pour ouvrir un template (à remplacer par votre implémentation)
 function openTemplate(templateNumber: number) {
     new Notice(`Template ${templateNumber} sélectionné`);
-    // Ajoutez votre code ici pour ouvrir le template correspondant
 }
