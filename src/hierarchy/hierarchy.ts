@@ -117,45 +117,46 @@ export async function comparaison(){
     await concatenate_all_notes();
      
     let LastAndPrevious = getLastAndPreviousFile();
+    if (LastAndPrevious != null && LastAndPrevious.lastfile != null && LastAndPrevious?.previousfile != null) {
+        console.log(LastAndPrevious.lastfile, LastAndPrevious.previousfile)
+        //On lit les fichiers
+        let last_file_data = await app.vault.read(LastAndPrevious.lastfile as TFile);
+        let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
     
-    //On lit les fichiers
-    let last_file_data = await app.vault.read(LastAndPrevious.lastfile as TFile);
-    let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
-
-    //On compare les fichiers
-    let final_data = compareFilesData(previous_file_data, last_file_data);
-
-    final_data = addNewlinesBeforeTables(final_data);
-      
-    final_data = removeDelImage(final_data);
-    console.log("--------------------------texteFinal1 -------------------------------", final_data);
-
-    final_data = replaceHtmlTags(final_data);
-    console.log("--------------------------texteFinal2---------------------------------", final_data);
-
-    //On crée le fichier final
-    const parent_folder = app.vault.getFolderByPath("Références");
-    let digits = 0;
-    if (parent_folder != null) {
-        digits = +await get_next_number(parent_folder);
-    }
+        //On compare les fichiers
+        let final_data = compareFilesData(previous_file_data, last_file_data);
     
-    await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
-    await app.workspace.openLinkText(``,`Finals/${digits - 1} Final.md`, true);
-
-    //ouvrir en mode view
-    const leaf = this.app.workspace.activeLeaf;
-    if (leaf) {
-        // Basculez la vue en mode lecture
-        leaf.setViewState({
-            ...leaf.getViewState(),
-            state: {
-                ...leaf.getViewState().state,
-                mode: 'preview' // 'preview' pour le mode lecture
-            }
-        });
-
+        final_data = addNewlinesBeforeTables(final_data);
+          
+        final_data = removeDelImage(final_data);
+    
+        final_data = replaceHtmlTags(final_data);
+    
+        //On crée le fichier final
+        const parent_folder = app.vault.getFolderByPath("Références");
+        let digits = 0;
+        if (parent_folder != null) {
+            digits = +await get_next_number(parent_folder);
+        }
+        
+        await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
+        await app.workspace.openLinkText(``,`Finals/${digits - 1} Final.md`, true);
+    
+        //ouvrir en mode view
+        const leaf = this.app.workspace.activeLeaf;
+        if (leaf) {
+            // Basculez la vue en mode lecture
+            leaf.setViewState({
+                ...leaf.getViewState(),
+                state: {
+                    ...leaf.getViewState().state,
+                    mode: 'preview' // 'preview' pour le mode lecture
+                }
+            });
+    
+        }
     }
+
 }
 
 
@@ -283,52 +284,47 @@ function extractFileContent(data: string, fileId: string): string | null {
     return null;
 }
 
-
-//get the last and previous file
-function getLastAndPreviousFile(){
-    let reference = null ;
-    let root = app.vault.getRoot();
-    //On récupère le chemin du dossier Saves
-    for (let child of root.children){
-        if (child instanceof TFolder && child.name === 'Saves'){
+// get the last and previous file
+function getLastAndPreviousFile() {
+    let reference: TFolder | null = null;
+    const root = app.vault.getRoot();
+    
+    // On récupère le chemin du dossier Saves
+    for (const child of root.children) {
+        if (child instanceof TFolder && child.name === 'Saves') {
             reference = child;
             break;
         }
     }
 
-    //On récupère les deux derniers fichiers
-    let last_file : TFile|null = null;
-    let previous_file = null;
-    if (reference != null && reference.children.length >= 2){
-        let referenceChildList = reference.children;
-        let last_number = 2;
-        let previous_number = 1;
+    // On récupère les deux derniers fichiers
+    let last_file: TFile | null = null;
+    let previous_file: TFile | null = null;
+    
+    if (reference !== null) {
+        let last_number = -Infinity;
+        let previous_number = -Infinity;
 
-        //Optimiser la recherche : comme avant mais en copiant la var
-        for (let child of referenceChildList){
-            if (child instanceof TFile){
-                let number = Number(getNumber(child.name));
-                if (number > last_number){
+        for (const child of reference.children) {
+            if (child instanceof TFile) {
+                const number = Number(getNumber(child.name));
+
+                if (number > last_number) {
+                    previous_number = last_number;
+                    previous_file = last_file;
                     last_number = number;
                     last_file = child;
-                }
-            }
-        }
-        for (let child of referenceChildList){
-            if (child instanceof TFile && child != last_file){
-                let number = Number(getNumber(child.name));
-                if (number > previous_number){
+                } else if (number > previous_number) {
                     previous_number = number;
                     previous_file = child;
                 }
             }
         }
-    }   
-    else{
-        new Notice('Pas assez de fichiers pour comparer');
+    } else {
+        new Notice('Dossier Saves introuvable');
+        return null;
     }
-    let res = {lastfile : last_file, previousfile : previous_file};
-    return res;
+    return { lastfile: last_file, previousfile: previous_file };
 }
 
 function addNewlinesBeforeTables(markdown: string): string {
@@ -357,7 +353,7 @@ function removeDelImage(str: string): string {
 function replaceHtmlTags(input: string): string {
     return input
         .replace(/<del>\s*/g, '<del>***')
-        .replace(/\s*<\/del>/g, '***</del>')
+        .replace(/\s*<\/del>/g, '***</del> ')
         .replace(/<ins>\s*/g, '***')
         .replace(/\s*<\/ins>/g, '***');
 }

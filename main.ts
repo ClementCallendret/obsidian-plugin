@@ -1,7 +1,7 @@
 import { Editor,MarkdownView, Notice, Plugin,TAbstractFile, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
-import { SampleModal } from './src/modal/modal';
+import { openTemplateModal } from './src/modal/modal';
 import { comparaison  } from './src/hierarchy/hierarchy';
 import {createFolders, get_next_number, set_ordre_from_file, set_order } from './src/utils/utils';
 
@@ -91,7 +91,16 @@ export default class MyPlugin extends Plugin {
 			id: 'template-4',
 			name: 'Template 4',
 			callback: () => {
-				this.create_file(4);
+				openTemplateModal(this.app);
+			}
+		});
+
+
+		this.addCommand({
+			id: 'template-selection',
+			name: 'Template Selection',
+			callback: () => {
+				openTemplateModal(this.app);
 			}
 		});
 
@@ -114,7 +123,7 @@ export default class MyPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new SampleModal(this.app).open();
+						openTemplateModal(this.app);
 					}
 
 					// This command will only show up in Command Palette when the check function returns true

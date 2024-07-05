@@ -1,11 +1,11 @@
 /*
-
 This CSS file will be included with your plugin, and
 available in the app when your plugin is enabled.
 
 If your plugin does not need CSS, delete this file.
-
 */
+
+/* Styles for sortable container and items */
 .sortable-container {
     display: flex;
     flex-direction: column;
@@ -26,7 +26,16 @@ If your plugin does not need CSS, delete this file.
 .sortable-item.dragging {
     opacity: 0.5;
 }
-  
-.disable-pointer-events {
-    pointer-events: none;
-  }
+
+/* CSS personnalisé pour les prévisualisations de tableaux */
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #000; /* Fond noir */
+    color: #000; /* Texte noir */
+}
+
+.custom-table th, .custom-table td {
+    border: 1px solid #fff; /* Lignes blanches */
+    padding: 8px;
+}
