@@ -91,7 +91,7 @@ export default class MyPlugin extends Plugin {
 			id: 'template-4',
 			name: 'Template 4',
 			callback: () => {
-				openTemplateModal(this.app);
+				this.create_file(4);
 			}
 		});
 
@@ -99,8 +99,9 @@ export default class MyPlugin extends Plugin {
 		this.addCommand({
 			id: 'template-selection',
 			name: 'Template Selection',
-			callback: () => {
-				openTemplateModal(this.app);
+			callback: async () => {
+				const templateNumber = await openTemplateModal(this.app);
+				this.create_file(templateNumber);
 			}
 		});
 
@@ -230,7 +231,6 @@ export default class MyPlugin extends Plugin {
 					content = scenario1 + scenario2 + regle_gestion;
 				}
 
-				console.log('new file path', newFilePath);
 				await this.app.vault.create(newFilePath, metadata + content);
 				this.app.workspace.openLinkText(newFilePath, '', true);
 				await this.set_id(id);

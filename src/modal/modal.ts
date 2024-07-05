@@ -1,5 +1,4 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
-
 // Classe pour créer la fenêtre modale
 class TemplateModal extends Modal {
     onTemplateSelected: (templateNumber: number) => void;
@@ -11,13 +10,6 @@ class TemplateModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-
-        // Charger le fichier CSS externe
-        const styleLink = document.createElement('link');
-        styleLink.setAttribute('rel', 'stylesheet');
-        styleLink.setAttribute('href', './style.css'); // Chemin vers votre fichier CSS externe
-        contentEl.appendChild(styleLink);
-
         // Titre de la fenêtre modale
         contentEl.createEl('h2', { text: 'Sélectionnez un template' });
 
@@ -183,10 +175,12 @@ class TemplateModal extends Modal {
 }
 
 // Méthode pour ouvrir la fenêtre modale
-export function openTemplateModal(app: App) {
-    new TemplateModal(app, (templateNumber: number) => {
-        openTemplate(templateNumber);
-    }).open();
+export function openTemplateModal(app: App): Promise<number> {
+    return new Promise<number>((resolve) => {
+        new TemplateModal(app, (templateNumber: number) => {
+            resolve(templateNumber); // Résoudre la promesse avec le numéro choisi
+        }).open();
+    });
 }
 
 function openTemplate(templateNumber: number) {

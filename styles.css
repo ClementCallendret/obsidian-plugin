@@ -32,4 +32,14 @@
     border: 1px solid #fff; /* Lignes blanches */
     padding: 8px;
 }
+/* Styles pour tous les tableaux générés dans la fenêtre modale */
+.custom-table-modal {
+    width: 100%;
+    border-collapse: collapse;
+    /*color: #ffffff;  Texte blanc */
+}
 
+.custom-table-modal th, .custom-table-modal td {
+    border: 1px solid #fff; /* Lignes blanches */
+    padding: 8px;
+}
