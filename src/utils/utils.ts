@@ -29,11 +29,6 @@ export async function compare_versions(a : TFile, b : TFile): Promise<number> {
     return 0;
 }	
 
-
-
-
-
-
 //récupérer l'id des métadonnées
 export async function get_id_from_file(filepath:TFile){
     let filedata = await this.app.vault.read(filepath);
@@ -45,22 +40,17 @@ export async function get_id_from_file(filepath:TFile){
 //Avoir le prochain numéro de fichier
 export async function get_next_number(parent_folder: TFolder): Promise<string> {
     let parent_number = getNumber(parent_folder.name);
-    console.log("parent_number", parent_number);
     if (parent_number != ""){
         parent_number += ".";
     }
     let last_number = 0;
     let files = [...parent_folder.children];
-    console.log("files", files );
     for (const file of files) {
         let file_number = getLastNumber(file.name);
         if (file_number > last_number) {
-            console.log("file_number", file_number);
-            console.log("last_number", last_number);
             last_number = file_number;
         }
     }
-    console.log("number ", parent_number + (last_number + 1).toString());
     return parent_number + (last_number + 1).toString();
 }
 
@@ -314,4 +304,35 @@ export function decrementLastNumber(input: string): string {
     // Reconstruire la chaîne avec le nombre incrémenté et le reste de la chaîne
     let res = newNumPart + restPart;
     return res.replace(/^\.+/, '');
+}
+
+
+export async function createFolders(){
+    let vault = app.vault;
+    const root_folder = vault.getFolderByPath("/")?.children;
+    let reference_folder_created = false;
+    let saves_folder_created = false;
+    let final_save_created = false;
+    if (root_folder != null){
+        for (const children of root_folder) {
+            if (children.name == "Références") {
+                reference_folder_created = true;
+            }
+            if (children.name == "Saves") {
+                saves_folder_created = true;
+            }
+            if (children.name == "Finals") {
+                final_save_created = true;
+            }
+        }
+    }
+    if (!reference_folder_created) {
+        await vault.createFolder("Références");
+    }
+    if (!saves_folder_created) {
+        await vault.createFolder("Saves");
+    }
+    if(!final_save_created){
+        await vault.createFolder("Finals");
+    }
 }

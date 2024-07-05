@@ -3,14 +3,12 @@ import { markdownDiff } from 'markdown-diff';
 
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import * as fs from 'fs';
-import {App, FileSystemAdapter, TFolder, Notice, TFile, Vault } from 'obsidian';
-import {get_id_from_file} from '../utils/utils';
-
-import { get_next_number } from '../utils/utils';
+import {TFolder, Notice, TFile, WorkspaceLeaf} from 'obsidian';
+import {createFolders, get_id_from_file, get_next_number } from '../utils/utils';
 
 async function compareMarkdownFiles() {
-    const file1 = await app.vault.getAbstractFileByPath('Projet/1 Titre1.md');
-    const file2 = await app.vault.getAbstractFileByPath('Projet/2 Titre2.md');
+    const file1 = app.vault.getAbstractFileByPath('Projet/1 Titre1.md');
+    const file2 =  app.vault.getAbstractFileByPath('Projet/2 Titre2.md');
 
     const data1 = await app.vault.read(file1 as TFile);
     const data2 = await app.vault.read(file2 as TFile);
@@ -115,8 +113,9 @@ export async function comparaison(){
     //Création des dossiers
     await createFolders();
     //creation du fichier de référence et de sa version pour la comparaison
+   
     await concatenate_all_notes();
-
+     
     let LastAndPrevious = getLastAndPreviousFile();
     
     //On lit les fichiers
@@ -129,16 +128,35 @@ export async function comparaison(){
     final_data = addNewlinesBeforeTables(final_data);
       
     final_data = removeDelImage(final_data);
+    console.log("--------------------------texteFinal1 -------------------------------", final_data);
+
+    final_data = replaceHtmlTags(final_data);
+    console.log("--------------------------texteFinal2---------------------------------", final_data);
+
     //On crée le fichier final
-    const parent_folder = app.vault.getFolderByPath("/Références");
+    const parent_folder = app.vault.getFolderByPath("Références");
     let digits = 0;
     if (parent_folder != null) {
         digits = +await get_next_number(parent_folder);
     }
-      
+    
     await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
-    }
+    await app.workspace.openLinkText(``,`Finals/${digits - 1} Final.md`, true);
 
+    //ouvrir en mode view
+    const leaf = this.app.workspace.activeLeaf;
+    if (leaf) {
+        // Basculez la vue en mode lecture
+        leaf.setViewState({
+            ...leaf.getViewState(),
+            state: {
+                ...leaf.getViewState().state,
+                mode: 'preview' // 'preview' pour le mode lecture
+            }
+        });
+
+    }
+}
 
 
 function compareFilesData(file1 : string, file2 : string): string{
@@ -173,13 +191,11 @@ export async function concatenate_all_notes() {
     const vault = this.app.vault;
     const files = vault.getMarkdownFiles().reverse();
 
-    const meta_file = `---\nid:`;
     const nb_files = files.length;
 
     let content_ref = '';
     let content_save = '';
     let id_list  = [];
-    let notes = new Array(nb_files).fill(0);
 
     for (const file of files){
         if (!file.path.startsWith('Références') && !file.path.startsWith('Saves') && !file.path.startsWith('Finals')) {
@@ -188,15 +204,17 @@ export async function concatenate_all_notes() {
             let data_wt_meta = match ? match[1] : null;
 
             const id = await get_id_from_file(file);
-            id_list.push(id);
-            content_save += `@@@@@@@@@@\n${id}\n@@@@@@@@@@\n`;
-
-            content_ref += `## ${file.basename}\n${data_wt_meta}\n\n`;
-            content_save += `## ${file.basename}\n${data_wt_meta}\n\n`;
+            if (id != null){
+                id_list.push(id);
+                content_save += `@@@@@@@@@@\n${id}\n@@@@@@@@@@\n`;
+    
+                content_ref += `## ${file.basename}\n${data_wt_meta}\n\n`;
+                content_save += `## ${file.basename}\n${data_wt_meta}\n\n`;
+            }
         }
     }
     //Récupérer le prochain nombre
-    const parent_folder = app.vault.getFolderByPath("/Références");
+    const parent_folder = app.vault.getFolderByPath("Références");
     let digits = 0;
     if (parent_folder != null) {
         digits = +await get_next_number(parent_folder);
@@ -209,7 +227,6 @@ export async function concatenate_all_notes() {
     //Creation fichier save
     const save_newFilePath = `Saves/${digits} Save.md`;
     await vault.create(save_newFilePath, id_list + '\n' + content_save);
-    await this.app.workspace.openLinkText(save_newFilePath, '', true);
 }
 
 //get number from file name
@@ -221,37 +238,6 @@ export function getNumber(input: string): string {
     return numberPart;
   }
 
-async function createFolders(){
-    //Nom du fichier
-    let vault = app.vault;
-    const root_folder = vault.getFolderByPath("/")?.children;
-    let reference_folder_created = false;
-    let saves_folder_created = false;
-    let final_save_created = false;
-    if (root_folder != null){
-        for (let i = 0; i < root_folder.length; i++) {
-            if (root_folder[i].name == "Références") {
-                reference_folder_created = true;
-            }
-            if (root_folder[i].name == "Saves") {
-                saves_folder_created = true;
-            }
-            if (root_folder[i].name == "Finals") {
-                final_save_created = true;
-            }
-        }
-    }
-    if (!reference_folder_created) {
-        await vault.createFolder("Références");
-    }
-    if (!saves_folder_created) {
-        await vault.createFolder("Saves");
-    }
-    if(!final_save_created){
-        await vault.createFolder("Finals");
-    }
-
-}
 function addNewline(input: string): string {
     return input.replace(/\./g, '.\n@@@a');
 }
@@ -366,4 +352,12 @@ function addNewlinesBeforeTables(markdown: string): string {
 function removeDelImage(str: string): string {
     // Utilise une expression régulière pour trouver et supprimer les éléments encadrés par <del>...</del>
     return str.replace(/<del>!\[\[.*?\]\]<\/del>/g, '');
+}
+
+function replaceHtmlTags(input: string): string {
+    return input
+        .replace(/<del>\s*/g, '<del>***')
+        .replace(/\s*<\/del>/g, '***</del>')
+        .replace(/<ins>\s*/g, '***')
+        .replace(/\s*<\/ins>/g, '***');
 }

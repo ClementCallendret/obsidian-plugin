@@ -293,8 +293,6 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
   
 
   async insert_new_file(source_path: string, target_path: string) {
-    console.log("source path", source_path);
-    console.log("target path", target_path);
     let source = this.app.vault.getAbstractFileByPath(source_path);
     let target = this.app.vault.getAbstractFileByPath(target_path);
     let target_file_last_number = 0;
@@ -347,42 +345,44 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
       } 
       //Cas 2 : dossier différent
       else {
-        //Incrémenter de 1 les fichiers dans le dossier cible
-        await this.rename_folder_children(target_parent_folder as TFolder, target_file_last_number);
-        //On récupère le parent du fichier source avant de le déplacer 
-        let source_parent;
-        if (source?.parent != null){
-          source_parent = {...this.app.vault.getAbstractFileByPath(source?.parent.path)};
-        }
-
-        //Déplacer le fichier source dans le dossier cible
-        if (target != null && source != null ){
-          
-          //cas root
-          let new_path = "";
-          if (target_parent_folder.path == "/"){
-            new_path = "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
-
-          }
-          else{
-            new_path = target.parent?.path + "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
-          }
-          await this.app.fileManager.renameFile(source, new_path);
-          
-          //rafraichir le parent du fichier source
-          let new_source_parent;
-          
-          if (source_parent?.path != null){
-            new_source_parent  = this.app.vault.getAbstractFileByPath(source_parent?.path );
+        if (source?.parent != this.app.vault.getRoot()){
+          //Incrémenter de 1 les fichiers dans le dossier cible
+          await this.rename_folder_children(target_parent_folder as TFolder, target_file_last_number);
+          //On récupère le parent du fichier source avant de le déplacer 
+          let source_parent;
+          if (source?.parent != null){
+            source_parent = this.app.vault.getAbstractFileByPath(source?.parent.path);
           }
 
-          //Décrémenter de 1 les fichiers dans le dossier source
-          await this.rename_folder_children(new_source_parent as TFolder, (-source_file_last_number));
-          
-          if (source instanceof TFolder){
-            await this.rename_folder_children(source as TFolder,0);
-          }
+          //Déplacer le fichier source dans le dossier cible
+          if (target != null && source != null){
             
+            //cas root
+            let new_path = "";
+            if (target_parent_folder.path == "/"){
+              new_path = "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
+
+            }
+            else{
+              new_path = target.parent?.path + "/" + this.decrementLastNumber(this.getNumber(target.name)) + " " + this.getTitleWithoutNumber(source.name);
+            }
+            await this.app.fileManager.renameFile(source, new_path);
+            
+            //rafraichir le parent du fichier source
+            let new_source_parent;
+            
+            if (source_parent?.path != null){
+              new_source_parent  = this.app.vault.getAbstractFileByPath(source_parent?.path );
+            }
+
+            //Décrémenter de 1 les fichiers dans le dossier source
+            await this.rename_folder_children(new_source_parent as TFolder, (-source_file_last_number));
+            
+            if (source instanceof TFolder){
+              await this.rename_folder_children(source as TFolder,0);
+            }
+              
+          }
         }
       }
     }
@@ -644,17 +644,18 @@ getNumber(input: string): string {
   }
 
   is_a_child(parent_folder : TFolder, child : TAbstractFile): boolean{
-    let children = parent_folder.children;
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].path == child.path){
+    let children_list = parent_folder.children;
+    for (const children of children_list){ 
+      if (children.path == child.path){
         return true;
       }
-      else if (children[i] instanceof TFolder){
-        return this.is_a_child(children[i] as TFolder, child);
+      else if (children instanceof TFolder){
+        return this.is_a_child(children, child);
       }
     }
     return false;
   }
+  
 
 
 
@@ -669,8 +670,11 @@ getNumber(input: string): string {
                 if (file instanceof TFile && file.parent != null) {
                     const file_parent = {... file.parent};
                     const file_name = file.name + "";
+                    let isMarkdown = file.extension == "md";
                     await app.vault.trash(file, true);
-                    await rename_folder_children(file_parent as TFolder,-(getLastNumber(file_name)));
+                    if (isMarkdown){
+                      await rename_folder_children(file_parent as TFolder,-(getLastNumber(file_name)));
+                    }
 
                     new Notice(`Deleted ${file.name}`);
                 }
