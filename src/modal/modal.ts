@@ -1,21 +1,5 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
 
-// CSS personnalisé pour les lignes de tableau blanches sur fond noir
-const customCSS = `
-<style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: #000; /* Fond noir */
-        color: #000; /* Texte noir */
-    }
-    th, td {
-        border: 1px solid #fff; /* Lignes blanches */
-        padding: 8px;
-    }
-</style>
-`;
-
 // Classe pour créer la fenêtre modale
 class TemplateModal extends Modal {
     onTemplateSelected: (templateNumber: number) => void;
@@ -28,10 +12,11 @@ class TemplateModal extends Modal {
     onOpen() {
         const { contentEl } = this;
 
-        // Ajouter le CSS personnalisé à la fenêtre modale
-        const styleEl = document.createElement('style');
-        styleEl.innerHTML = customCSS;
-        contentEl.appendChild(styleEl);
+        // Charger le fichier CSS externe
+        const styleLink = document.createElement('link');
+        styleLink.setAttribute('rel', 'stylesheet');
+        styleLink.setAttribute('href', './style.css'); // Chemin vers votre fichier CSS externe
+        contentEl.appendChild(styleLink);
 
         // Titre de la fenêtre modale
         contentEl.createEl('h2', { text: 'Sélectionnez un template' });
@@ -64,7 +49,7 @@ class TemplateModal extends Modal {
         <li>-</li>
     </ul>
     <p>Règles de gestion :</p>
-    <table>
+    <table class="custom-table-modal"> <!-- Utilisation de la classe spécifique -->
         <thead>
             <tr>
                 <th>Code</th>
@@ -90,7 +75,7 @@ class TemplateModal extends Modal {
         <li>-</li>
     </ul>
     <p>Règles de gestion :</p>
-    <table>
+    <table class="custom-table-modal"> <!-- Utilisation de la classe spécifique -->
         <thead>
             <tr>
                 <th>N°</th>
@@ -150,7 +135,7 @@ class TemplateModal extends Modal {
         <li>-</li>
     </ul>
     <p>Règles de gestion :</p>
-    <table>
+    <table class="custom-table-modal"> <!-- Utilisation de la classe spécifique -->
         <thead>
             <tr>
                 <th>Code</th>

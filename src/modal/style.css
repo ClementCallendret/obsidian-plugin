@@ -1,0 +1,12 @@
+/* Styles pour tous les tableaux générés dans la fenêtre modale */
+.custom-table-modal {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #000; /* Fond noir */
+    color: #000; /* Texte noir */
+}
+
+.custom-table-modal th, .custom-table-modal td {
+    border: 1px solid #fff; /* Lignes blanches */
+    padding: 8px;
+}
