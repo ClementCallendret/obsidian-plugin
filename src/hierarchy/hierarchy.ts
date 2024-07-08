@@ -118,20 +118,22 @@ export async function comparaison(){
      
     let LastAndPrevious = getLastAndPreviousFile();
     if (LastAndPrevious != null && LastAndPrevious.lastfile != null && LastAndPrevious?.previousfile != null) {
-        console.log(LastAndPrevious.lastfile, LastAndPrevious.previousfile)
         //On lit les fichiers
         let last_file_data = await app.vault.read(LastAndPrevious.lastfile as TFile);
         let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
     
         //On compare les fichiers
+        console.log("last file data : ", last_file_data);
+        console.log("previous file data : ", previous_file_data);
+
         let final_data = compareFilesData(previous_file_data, last_file_data);
-    
+        
         final_data = addNewlinesBeforeTables(final_data);
-          
+
         final_data = removeDelImage(final_data);
-    
+
         final_data = replaceHtmlTags(final_data);
-    
+
         //On crée le fichier final
         const parent_folder = app.vault.getFolderByPath("Références");
         let digits = 0;
@@ -168,12 +170,14 @@ function compareFilesData(file1 : string, file2 : string): string{
     let list_id_file1 = extractNumbers(file1);
     let list_id_file2 = extractNumbers(file2);
 
-    for (let id1 of list_id_file1){
+
+
+    for (let id2 of list_id_file2){
         //Si partie déjà existante
-        if (list_id_file2.includes(id1)){
+        if (list_id_file1.includes(id2)){
             //On récupère les parties
-            let part1 = extractFileContent(file1, id1.toString());
-            let part2 = extractFileContent(file2, id1.toString());
+            let part1 = extractFileContent(file1, id2.toString());
+            let part2 = extractFileContent(file2, id2.toString());
             //On compare les deux parties
             if (part1 != null && part2 != null){
                 //texteFinal += compareString(part1, part2);
@@ -181,7 +185,7 @@ function compareFilesData(file1 : string, file2 : string): string{
             }
         }
         else{
-            texteFinal += extractFileContent(file1, id1.toString());
+            texteFinal += "*** "+extractFileContent(file2, id2.toString()) + " ***";
         }
         texteFinal += '\n';
     }
@@ -355,5 +359,6 @@ function replaceHtmlTags(input: string): string {
         .replace(/<del>\s*/g, '<del>***')
         .replace(/\s*<\/del>/g, '***</del> ')
         .replace(/<ins>\s*/g, '***')
-        .replace(/\s*<\/ins>/g, '***');
+        .replace(/\s*<\/ins>/g, '***')
+        .replace(/(\*\*\*\*\*\*)/g, '');
 }
