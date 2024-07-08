@@ -53,6 +53,36 @@
     gap: 20px; /* Espace entre les éléments de la grille */
 }
 
+/* Assurez-vous d'inclure cette partie CSS */
+.template-grid-container {
+    display: grid;
+    gap: 20px; /* Espace entre les éléments de la grille */
+}
+
+@media (min-width: 1500px) {
+    .template-grid-container {
+        grid-template-columns: repeat(4, 1fr); /* Quatre colonnes */
+    }
+}
+
+@media (max-width: 1500px) {
+    .template-grid-container {
+        grid-template-columns: repeat(3, 1fr); /* Trois colonnes */
+    }
+}
+
+@media (max-width: 1000px) {
+    .template-grid-container {
+        grid-template-columns: repeat(2, 1fr); /* Deux colonnes */
+    }
+}
+
+@media (max-width: 600px) {
+    .template-grid-container {
+        grid-template-columns: 1fr; /* Une colonne */
+    }
+}
+
 .template-card {
     border: 1px solid #3F4150; /* Bordure violette plus foncée */
     padding: 15px;
@@ -79,4 +109,12 @@
 
 .template-card button:hover {
     background: #575BBE; /* Fond violet plus sombre au survol */
+}
+/* Styles pour centrer les titres et le texte */
+.center-text {
+    text-align: center;
+}
+
+.template-card h3 {
+    text-align: center;
 }

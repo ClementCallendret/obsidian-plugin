@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice } from 'obsidian';
+import { App, Modal, Notice, TAbstractFile } from 'obsidian';
 
 // Classe pour créer la fenêtre modale
 class TemplateModal extends Modal {
@@ -11,8 +11,13 @@ class TemplateModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
+
+        // Définir la largeur de la fenêtre modale
+        this.modalEl.style.width = '80%'; // Utilisez 80% de la largeur de l'écran
+
         // Titre de la fenêtre modale
-        contentEl.createEl('h2', { text: 'Sélectionnez un template' });
+        const titleEl = contentEl.createEl('h2', { text: 'Sélectionnez un template' });
+        titleEl.addClass('center-text'); // Ajouter la classe pour centrer le texte
 
         // Container pour les templates en grille
         const gridContainer = contentEl.createEl('div', { cls: 'template-grid-container' });
@@ -45,7 +50,7 @@ class TemplateModal extends Modal {
         <li>-</li>
     </ul>
     <p>Règles de gestion :</p>
-    <table class="custom-table-modal"> <!-- Utilisation de la classe spécifique -->
+    <table class="custom-table-modal">
         <thead>
             <tr>
                 <th>Code</th>
@@ -71,7 +76,7 @@ class TemplateModal extends Modal {
         <li>-</li>
     </ul>
     <p>Règles de gestion :</p>
-    <table class="custom-table-modal"> <!-- Utilisation de la classe spécifique -->
+    <table class="custom-table-modal">
         <thead>
             <tr>
                 <th>N°</th>
@@ -131,7 +136,7 @@ class TemplateModal extends Modal {
         <li>-</li>
     </ul>
     <p>Règles de gestion :</p>
-    <table class="custom-table-modal"> <!-- Utilisation de la classe spécifique -->
+    <table class="custom-table-modal">
         <thead>
             <tr>
                 <th>Code</th>
@@ -153,19 +158,20 @@ class TemplateModal extends Modal {
             }
         ];
 
-        // Ajout des boutons avec prévisualisation pour les 4 templates
+        // Ajout des prévisualisations de templates
         templates.forEach((template, index) => {
             const templateCard = gridContainer.createEl('div', { cls: 'template-card' });
 
             const titleEl = templateCard.createEl('h3', { text: template.title });
+            titleEl.addClass('center-text'); // Ajouter la classe pour centrer le texte
+
             const previewEl = templateCard.createEl('div', { cls: 'template-preview' });
             previewEl.innerHTML = template.preview;
 
-            const button = templateCard.createEl('button', { text: `Sélectionner ${template.title}` });
-            button.onclick = () => {
+            templateCard.addEventListener('click', () => {
                 this.onTemplateSelected(index + 1);
                 this.close();
-            };
+            });
         });
     }
 

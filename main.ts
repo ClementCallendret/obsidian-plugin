@@ -12,23 +12,24 @@ export default class MyPlugin extends Plugin {
 
 	async onload() {
         await this.loadSettings();
-
+/*
 		this.addRibbonIcon("dice", "Activate view", () => {
 		this.activateView();
 		});
-		
+		*/
 		// This creates an icon in the left ribbon.
+		
 		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
 			comparaison();
 			new Notice('Fichier de référence créé !');
 
 		});
 
-		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier 1', (evt: MouseEvent) => {
-			this.create_file(1);
-			new Notice('Fichier créé !');
+		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
+			const templateNumber = await openTemplateModal(this.app);
+			this.create_file(templateNumber);
 		});
-
+		/*
 		const ribbonIconE3 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier 2', (evt: MouseEvent) => {
 			this.create_file(2);
 			new Notice('Fichier créé !');
@@ -45,15 +46,16 @@ export default class MyPlugin extends Plugin {
 			});
 		
 
-
+		*/
 		// Perform additional things with the ribbon
-		ribbonIconE1.addClass('my-plugin-ribbon-class');
+		//ribbonIconE1.addClass('my-plugin-ribbon-class');
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
 		// This adds a simple command that can be triggered anywhere
+		/*
 		this.addCommand({
 			id: 'reset-id',
 			name: 'Reset id',
@@ -62,7 +64,7 @@ export default class MyPlugin extends Plugin {
 				//new SampleModal(this.app).open();
 			}
 		});
-
+		
 		this.addCommand({
 			id: 'template-1',
 			name: 'Template 1',
@@ -94,7 +96,7 @@ export default class MyPlugin extends Plugin {
 				this.create_file(4);
 			}
 		});
-
+*/
 
 		this.addCommand({
 			id: 'template-selection',
@@ -105,6 +107,17 @@ export default class MyPlugin extends Plugin {
 			}
 		});
 
+		this.addCommand({
+			id : 'create-reference-file',
+			name : 'Create reference file',
+			callback: async() => {
+				await comparaison();
+				new Notice('Fichier de référence créé !');
+			},
+		});
+
+
+		/*
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'sample-editor-command',
@@ -132,7 +145,7 @@ export default class MyPlugin extends Plugin {
 				}
 			}
 		});
-		
+		*/
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
@@ -174,6 +187,7 @@ export default class MyPlugin extends Plugin {
             this.initial_load = false;
 			this.start();
 			createFolders();
+			this.activateView();
         });
  
 	}
@@ -193,10 +207,8 @@ export default class MyPlugin extends Plugin {
 
 	async create_file(templateNumber : number) {
 		let activeFile = this.app.workspace.getActiveFile() as TAbstractFile;
-		if (activeFile == null) {
-			activeFile = this.app.vault.getRoot().children[0];
-		}
-		if (activeFile) {
+		//Si le fichier actif n'est pas null et n'est pas dans la racine
+		if (activeFile != null && !this.app.vault.getRoot().children.includes(activeFile)) {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
 			const parent_folder = activeFile.parent;
 			if (parent_folder != null){
@@ -236,6 +248,9 @@ export default class MyPlugin extends Plugin {
 				await this.set_id(id);
 				
 			}
+		}
+		else {
+			console.error('Can t create file in root folder')	
 		}
 	}
 
