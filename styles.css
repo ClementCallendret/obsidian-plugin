@@ -118,3 +118,11 @@
 .template-card h3 {
     text-align: center;
 }
+
+/* CSS pour rendre le titre "Delete" et l'icône "trash" en rouge spécifique */
+.context-menu-delete-red .menu-item-icon,
+.context-menu-delete-red .menu-item-title {
+    color: #FB464C !important;
+}
+
+

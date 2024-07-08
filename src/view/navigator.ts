@@ -1,5 +1,5 @@
-import { ItemView,Menu, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
-import { delete_folder, file_already_open, getLastNumber, rename_folder_children} from "../utils/utils";
+import {App, ItemView,Menu,Modal, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import { delete_folder, file_already_open, get_next_number, getLastNumber, rename_folder_children} from "../utils/utils";
 
 let folder_expand: Set<string> = new Set();
 
@@ -96,7 +96,7 @@ export class ExampleView extends ItemView {
           // Appel à la fonction createContextMenu avec les données appropriées
           if (filePath && type) {
               await this.createContextMenu(event, filePath, type);
-              await this.updateFileList();
+              //await this.updateFileList();
             }
 
       });
@@ -656,48 +656,168 @@ getNumber(input: string): string {
     return false;
   }
   
-
-
-
   async createContextMenu(event: MouseEvent, filePath: string, type: string) {
     const menu = new Menu();
-    if (type === "file") {    
+  
+    if (type === "file") {
         menu.addItem((item) => {
-            item.setTitle("Delete")
-            .setIcon("trash")
+            item.setTitle("Rename")
+            .setIcon("pencil")
             .onClick(async () => {
                 const file = app.vault.getAbstractFileByPath(filePath);
-                if (file instanceof TFile && file.parent != null) {
-                    const file_parent = {... file.parent};
-                    const file_name = file.name + "";
-                    let isMarkdown = file.extension == "md";
-                    await app.vault.trash(file, true);
-                    if (isMarkdown){
-                      await rename_folder_children(file_parent as TFolder,-(getLastNumber(file_name)));
+                if (file instanceof TFile) {
+                    const newName = await promptForNewName(file.name);
+                    if (newName) {
+                        const newFilePath = `${file.parent?.path}/${newName}`;
+                        await app.vault.rename(file, newFilePath);
+                        new Notice(`Renamed to ${newName}`);
                     }
-
-                    new Notice(`Deleted ${file.name}`);
-                }
-            });
-        });  
-    } 
-    else if (type === "folder") {
-        menu.addItem((item) => {
-            item.setTitle("Delete")
-            .setIcon("trash")
-            .onClick(async () => {
-                const folder = app.vault.getAbstractFileByPath(filePath);
-                if (folder instanceof TFolder && folder.parent != null) {
-                    const folder_parent = {... folder.parent};
-                    const folder_name = folder.name + "";
-                    await delete_folder(folder as TFolder);
-                    await rename_folder_children(folder_parent as TFolder,-(getLastNumber(folder_name)));
-                    await this.updateFileList();
-                    new Notice(`Deleted ${folder.name}`);
                 }
             });
         });
+  
+        menu.addItem((item) => {
+          item.setTitle("Delete")
+          .setIcon("trash")
+          .onClick(async () => {
+              const file = app.vault.getAbstractFileByPath(filePath);
+              if (file instanceof TFile && file.parent != null) {
+                  const file_parent = { ...file.parent };
+                  const file_name = file.name + "";
+                  let isMarkdown = file.extension == "md";
+                  await app.vault.trash(file, true);
+                  if (isMarkdown) {
+                      await rename_folder_children(file_parent as TFolder, -(getLastNumber(file_name)));
+                  }
+                  new Notice(`Deleted ${file.name}`);
+              }
+          });
+  
+          // Ajouter la classe personnalisée pour rendre le titre et l'icône en rouge
+          item.dom.classList.add('context-menu-delete-red');
+      });
+    } 
+    else if (type === "folder") {
+  
+      menu.addItem((item) => {
+        item.setTitle("New File")
+        .setIcon("file")
+        .onClick(async () => {
+            const folder = app.vault.getAbstractFileByPath(filePath);
+            if (folder instanceof TFolder) {
+              const number = await get_next_number(folder);
+              const newFile = await app.vault.create(`${folder.path}/${number} Titre${number}.md`, "");
+              new Notice(`Created new file ${newFile.name}`);
+            }
+        });
+      });
+  
+      menu.addItem((item) => {
+        item.setTitle("New Folder")
+        .setIcon("folder")
+        .onClick(async () => {
+            const folder = app.vault.getAbstractFileByPath(filePath);
+            if (folder instanceof TFolder) {
+              const number = await get_next_number(folder);
+              const newFile = await app.vault.createFolder(`${folder.path}/${number} New Folder`);
+              new Notice(`Created new file ${newFile.name}`);
+            }
+        });
+      });
+  
+        menu.addItem((item) => {
+            item.setTitle("Rename")
+            .setIcon("pencil")
+            .onClick(async () => {
+                const folder = app.vault.getAbstractFileByPath(filePath);
+                if (folder instanceof TFolder) {
+                    const newName = await promptForNewName(folder.name);
+                    if (newName) {
+                        const newFolderPath = `${folder.parent?.path}/${newName}`;
+                        await app.vault.rename(folder, newFolderPath);
+                        new Notice(`Renamed to ${newName}`);
+                    }
+                }
+            });
+        });
+  
+        menu.addItem((item) => {
+          item.setTitle("Delete")
+          .setIcon("trash")
+          .onClick(async () => {
+              const folder = app.vault.getAbstractFileByPath(filePath);
+              if (folder instanceof TFolder && folder.parent != null) {
+                  const folder_parent = { ...folder.parent };
+                  const folder_name = folder.name + "";
+                  await delete_folder(folder as TFolder);
+                  await rename_folder_children(folder_parent as TFolder, -(getLastNumber(folder_name)));
+                  await this.updateFileList();
+                  new Notice(`Deleted ${folder.name}`);
+              }
+          });
+          // Ajouter la classe personnalisée pour rendre le titre et l'icône en rouge
+          item.dom.classList.add('context-menu-delete-red');
+      });
     }
     menu.showAtMouseEvent(event);
+  }
+
+
+
+}
+
+
+// Méthode pour afficher une boîte de dialogue et obtenir le nouveau nom
+async function promptForNewName(oldName: string): Promise<string | null> {
+  return new Promise<string | null>((resolve) => {
+      const modal = new RenameModal(this.app, oldName, resolve);
+      modal.open();
+  });
+}
+
+// Classe pour la boîte de dialogue de renommage
+class RenameModal extends Modal {
+  oldName: string;
+  onSubmit: (newName: string | null) => void;
+
+  constructor(app: App, oldName: string, onSubmit: (newName: string | null) => void) {
+      super(app);
+      this.oldName = oldName;
+      this.onSubmit = onSubmit;
+  }
+
+  onOpen() {
+      const { contentEl } = this;
+
+      contentEl.createEl('h2', { text: 'Rename File/Folder' });
+
+      const input = contentEl.createEl('input', {
+          type: 'text',
+          value: this.oldName
+      });
+
+      input.focus();
+
+      const submitButton = contentEl.createEl('button', { text: 'Rename' });
+      submitButton.onclick = () => {
+          const newName = input.value.trim();
+          if (newName) {
+              this.onSubmit(newName);
+          } else {
+              this.onSubmit(null);
+          }
+          this.close();
+      };
+
+      const cancelButton = contentEl.createEl('button', { text: 'Cancel' });
+      cancelButton.onclick = () => {
+          this.onSubmit(null);
+          this.close();
+      };
+  }
+
+  onClose() {
+      const { contentEl } = this;
+      contentEl.empty();
   }
 }

@@ -344,3 +344,7 @@ export default class MyPlugin extends Plugin {
 		}
 	}
 }
+
+function getID(plugin : MyPlugin){
+	return plugin.get_id();
+}
