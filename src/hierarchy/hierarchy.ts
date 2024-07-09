@@ -123,8 +123,6 @@ export async function comparaison(){
         let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
     
         //On compare les fichiers
-        console.log("last file data : ", last_file_data);
-        console.log("previous file data : ", previous_file_data);
 
         let final_data = compareFilesData(previous_file_data, last_file_data);
         

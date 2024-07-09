@@ -1,5 +1,7 @@
-import {App, ItemView,Menu,Modal, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import {App, ItemView,Menu,Modal, Notice, Plugin, TAbstractFile, TFile, TFolder,PluginManifest, WorkspaceLeaf } from "obsidian";
 import { delete_folder, file_already_open, get_next_number, getLastNumber, rename_folder_children} from "../utils/utils";
+import { openTemplateModal } from '../modal/modal';
+import MyPlugin from "main";
 
 let folder_expand: Set<string> = new Set();
 
@@ -17,9 +19,10 @@ class TreeFile {
 
 export class ExampleView extends ItemView {
   private draggedItem: HTMLElement | null = null;
-  
-  constructor(leaf: WorkspaceLeaf) {
+  private MyPlugin : MyPlugin;
+  constructor(leaf: WorkspaceLeaf, Myplugin: MyPlugin) {
     super(leaf);
+    this.MyPlugin = Myplugin;
   }
 
   getViewType() {
@@ -705,9 +708,8 @@ getNumber(input: string): string {
         .onClick(async () => {
             const folder = app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
-              const number = await get_next_number(folder);
-              const newFile = await app.vault.create(`${folder.path}/${number} Titre${number}.md`, "");
-              new Notice(`Created new file ${newFile.name}`);
+              const templateNumber = await openTemplateModal(this.app);
+              await this.MyPlugin.create_file(templateNumber,folder)
             }
         });
       });

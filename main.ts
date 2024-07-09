@@ -1,4 +1,4 @@
-import { Editor,MarkdownView, Notice, Plugin,TAbstractFile, WorkspaceLeaf } from 'obsidian';
+import { Editor,MarkdownView, Notice, Plugin,TAbstractFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
 import { openTemplateModal } from './src/modal/modal';
@@ -8,7 +8,6 @@ import {createFolders, get_next_number, set_ordre_from_file, set_order } from '.
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
     private initial_load: boolean = true;
-
 
 	async onload() {
         await this.loadSettings();
@@ -24,29 +23,13 @@ export default class MyPlugin extends Plugin {
 			new Notice('Fichier de référence créé !');
 
 		});
-
+		
 		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
 			const templateNumber = await openTemplateModal(this.app);
-			this.create_file(templateNumber);
+			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
+			this.create_file(templateNumber,parentFolder);
 		});
-		/*
-		const ribbonIconE3 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier 2', (evt: MouseEvent) => {
-			this.create_file(2);
-			new Notice('Fichier créé !');
-		});
-
-		const ribbonIconE4 = this.addRibbonIcon('folder-plus', 'Créer un nouveau dossier', (evt: MouseEvent) => {
-			this.create_folder();
-			new Notice('Dossier créé !');
-		});
-
-		const ribbonIconE5 = this.addRibbonIcon('folder-sync', 'Synchroniser l\'ordre des fichiers', async (evt: MouseEvent) => {
-			await set_order();
-			new Notice('Ordre synchronisé !');
-			});
 		
-
-		*/
 		// Perform additional things with the ribbon
 		//ribbonIconE1.addClass('my-plugin-ribbon-class');
 
@@ -54,56 +37,13 @@ export default class MyPlugin extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
-		// This adds a simple command that can be triggered anywhere
-		/*
-		this.addCommand({
-			id: 'reset-id',
-			name: 'Reset id',
-			callback: () => {
-				this.set_id(-1);
-				//new SampleModal(this.app).open();
-			}
-		});
-		
-		this.addCommand({
-			id: 'template-1',
-			name: 'Template 1',
-			callback: () => {
-				this.create_file(1);
-			}
-		});
-
-		this.addCommand({
-			id: 'template-2',
-			name: 'Template 2',
-			callback: () => {
-				this.create_file(2);
-			}
-		});
-
-		this.addCommand({
-			id: 'template-3',
-			name: 'Template 3',
-			callback: () => {
-				this.create_file(3);
-			}
-		});
-
-		this.addCommand({
-			id: 'template-4',
-			name: 'Template 4',
-			callback: () => {
-				this.create_file(4);
-			}
-		});
-*/
-
 		this.addCommand({
 			id: 'template-selection',
 			name: 'Template Selection',
 			callback: async () => {
 				const templateNumber = await openTemplateModal(this.app);
-				this.create_file(templateNumber);
+				const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
+				this.create_file(templateNumber, parentFolder);
 			}
 		});
 
@@ -179,10 +119,10 @@ export default class MyPlugin extends Plugin {
 
 		this.registerView(
 			VIEW_TYPE_EXAMPLE,
-			(leaf) => new ExampleView(leaf)
+			(leaf) => new ExampleView(leaf, this)
 		  );
         
-          this.app.workspace.onLayoutReady(() => {
+        this.app.workspace.onLayoutReady(() => {
             // Le chargement initial est terminé
             this.initial_load = false;
 			this.start();
@@ -195,7 +135,7 @@ export default class MyPlugin extends Plugin {
 
 	onunload() {}
 
-	get_id(): number {
+	public get_id(): number {
 		return this.settings.id;
 	}
 
@@ -205,52 +145,52 @@ export default class MyPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
-	async create_file(templateNumber : number) {
-		let activeFile = this.app.workspace.getActiveFile() as TAbstractFile;
+	async create_file(templateNumber : number, folder : TFolder) {
+		//let activeFile = this.app.workspace.getActiveFile() as TAbstractFile;
 		//Si le fichier actif n'est pas null et n'est pas dans la racine
-		if (activeFile != null && !this.app.vault.getRoot().children.includes(activeFile)) {
-			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-			const parent_folder = activeFile.parent;
-			if (parent_folder != null){
-				let content = '';
-				const digits = await get_next_number(parent_folder);
-				const newFilePath = `${folderPath}/${digits} Titre${digits}.md`;
-				const id = this.get_id()+1;
-				const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---\n`;		
-				
-				const scenario1 = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
-				const scenario2 = `Scenario SC${digits} - 2 :\n	-\n	-\n\n`
+		//const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
+		//const parent_folder =  app.vault.getAbstractFileByPath(folderPath.path) as TFolder;
+		const template_list = this.settings.templates;
+		console.log("template list", template_list);
+		if (folder != null){
+			//let content = '';
+			const digits = await get_next_number(folder);
+			
+			const newFilePath = `${folder.path}/${digits} Titre${digits}.md`;
+			const id = this.get_id()+1;
+			const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---\n`;		
+			/*
+			const scenario1 = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
+			const scenario2 = `Scenario SC${digits} - 2 :\n	-\n	-\n\n`
 
-				const casUsage = `${digits}.1 Cas d'usage n°1:\n	-\n	-\n\n`;
+			const casUsage = `${digits}.1 Cas d'usage n°1:\n	-\n	-\n\n`;
 
-				let regle_gestion = `Règles de gestion : \n`;
-				if (templateNumber == 1 ){
-					regle_gestion += `	-\n	-\n`
-					content = scenario1 + regle_gestion;
-				} 
-				else if (templateNumber == 2){
-					regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} | Description |`;
-					content = scenario1 + regle_gestion;
-				}
-				else if(templateNumber == 3){
-					regle_gestion += ` \n|  N°  |         Cas d'usage        |         Règle        |\n| :-------: | -------------------------------------- | -------------------------------------- |\n| 1 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|\n| 2 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|`
-					content = casUsage + regle_gestion;
-
-				}
-				//template number 4
-				else {
-					regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} - 1 | Description |\n| RG${digits} - 2 | Description |`;
-					content = scenario1 + scenario2 + regle_gestion;
-				}
-
-				await this.app.vault.create(newFilePath, metadata + content);
-				this.app.workspace.openLinkText(newFilePath, '', true);
-				await this.set_id(id);
-				
+			let regle_gestion = `Règles de gestion : \n`;
+			if (templateNumber == 1 ){
+				regle_gestion += `	-\n	-\n`
+				content = scenario1 + regle_gestion;
+			} 
+			else if (templateNumber == 2){
+				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} | Description |`;
+				content = scenario1 + regle_gestion;
 			}
-		}
-		else {
-			console.error('Can t create file in root folder')	
+			else if(templateNumber == 3){
+				regle_gestion += ` \n|  N°  |         Cas d'usage        |         Règle        |\n| :-------: | -------------------------------------- | -------------------------------------- |\n| 1 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|\n| 2 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|`
+				content = casUsage + regle_gestion;
+
+			}
+			//template number 4
+			else {
+				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} - 1 | Description |\n| RG${digits} - 2 | Description |`;
+				content = scenario1 + scenario2 + regle_gestion;
+			}*/
+			let content : string = metadata + template_list[templateNumber-1].content.toString();
+			content.replace(/`/g, '\'');
+			content.replace(/\$\{digits\}/g, digits.toString());
+			await this.app.vault.create(newFilePath, content);
+			this.app.workspace.openLinkText(newFilePath, '', true);
+			await this.set_id(id);
+			
 		}
 	}
 
@@ -343,8 +283,4 @@ export default class MyPlugin extends Plugin {
 			await this.set_id(id);
 		}
 	}
-}
-
-function getID(plugin : MyPlugin){
-	return plugin.get_id();
 }
