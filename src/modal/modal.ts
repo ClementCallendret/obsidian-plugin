@@ -1,11 +1,12 @@
-import { App, Modal, Notice, TAbstractFile } from 'obsidian';
-
+import { App, Modal, Notice, Setting, TAbstractFile } from 'obsidian';
+import { Template } from '../settings/setting';
 // Classe pour créer la fenêtre modale
 class TemplateModal extends Modal {
     onTemplateSelected: (templateNumber: number) => void;
-
-    constructor(app: App, onTemplateSelected: (templateNumber: number) => void) {
+    templates : Template[];
+    constructor(app: App, templates: Template[], onTemplateSelected: (templateNumber: number) => void) {
         super(app);
+        this.templates = templates;
         this.onTemplateSelected = onTemplateSelected;
     }
 
@@ -23,6 +24,7 @@ class TemplateModal extends Modal {
         const gridContainer = contentEl.createEl('div', { cls: 'template-grid-container' });
 
         // Templates previews
+        /*
         const templates = [
             {
                 title: 'Template 1',
@@ -156,13 +158,14 @@ class TemplateModal extends Modal {
     </table>
 </div>`
             }
-        ];
+        ];*/
+        const templates = this.templates;
 
         // Ajout des prévisualisations de templates
         templates.forEach((template, index) => {
             const templateCard = gridContainer.createEl('div', { cls: 'template-card' });
-
-            const titleEl = templateCard.createEl('h3', { text: template.title });
+            const title = "Template " + (index + 1); 
+            const titleEl = templateCard.createEl('h3', { text: title });
             titleEl.addClass('center-text'); // Ajouter la classe pour centrer le texte
 
             const previewEl = templateCard.createEl('div', { cls: 'template-preview' });
@@ -182,9 +185,9 @@ class TemplateModal extends Modal {
 }
 
 // Méthode pour ouvrir la fenêtre modale
-export function openTemplateModal(app: App): Promise<number> {
+export function openTemplateModal(app: App, templates : Template[]): Promise<number> {
     return new Promise<number>((resolve) => {
-        new TemplateModal(app, (templateNumber: number) => {
+        new TemplateModal(app, templates, (templateNumber: number) => {
             resolve(templateNumber); // Résoudre la promesse avec le numéro choisi
         }).open();
     });

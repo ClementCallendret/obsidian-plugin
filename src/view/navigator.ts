@@ -708,7 +708,7 @@ getNumber(input: string): string {
         .onClick(async () => {
             const folder = app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
-              const templateNumber = await openTemplateModal(this.app);
+              const templateNumber = await openTemplateModal(this.app, this.MyPlugin.settings.templates);
               await this.MyPlugin.create_file(templateNumber,folder)
             }
         });

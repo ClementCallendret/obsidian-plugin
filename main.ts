@@ -25,7 +25,7 @@ export default class MyPlugin extends Plugin {
 		});
 		
 		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
-			const templateNumber = await openTemplateModal(this.app);
+			const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 			this.create_file(templateNumber,parentFolder);
 		});
@@ -41,7 +41,7 @@ export default class MyPlugin extends Plugin {
 			id: 'template-selection',
 			name: 'Template Selection',
 			callback: async () => {
-				const templateNumber = await openTemplateModal(this.app);
+				const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 				const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 				this.create_file(templateNumber, parentFolder);
 			}
