@@ -184,9 +184,13 @@ export default class MyPlugin extends Plugin {
 				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} - 1 | Description |\n| RG${digits} - 2 | Description |`;
 				content = scenario1 + scenario2 + regle_gestion;
 			}*/
-			let content : string = metadata + template_list[templateNumber-1].content.toString();
+			let content : string = metadata + template_list[templateNumber-1].content.toString() + "";
+			console.log("content", content);
 			content.replace(/`/g, '\'');
-			content.replace(/\$\{digits\}/g, digits.toString());
+			content = content.replace(/\${digits}/g, digits.toString());
+			console.log("------------------------------------------")
+			console.log("content", content);
+
 			await this.app.vault.create(newFilePath, content);
 			this.app.workspace.openLinkText(newFilePath, '', true);
 			await this.set_id(id);
@@ -249,6 +253,8 @@ export default class MyPlugin extends Plugin {
         }
     }
 	async loadSettings() {
+		console.log("load settings", await this.loadData());
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
