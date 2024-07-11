@@ -126,12 +126,6 @@ export async function comparaison(){
 
         let final_data = compareFilesData(previous_file_data, last_file_data);
         
-        final_data = addNewlinesBeforeTables(final_data);
-
-        final_data = removeDelImage(final_data);
-
-        final_data = replaceHtmlTags(final_data);
-
         //On crée le fichier final
         const parent_folder = app.vault.getFolderByPath("Références");
         let digits = 0;
@@ -160,7 +154,7 @@ export async function comparaison(){
 }
 
 
-function compareFilesData(file1 : string, file2 : string): string{
+export function compareFilesData(file1 : string, file2 : string): string{
     //init res
     let texteFinal = '';
 
@@ -183,10 +177,18 @@ function compareFilesData(file1 : string, file2 : string): string{
             }
         }
         else{
-            texteFinal += "*** "+extractFileContent(file2, id2.toString()) + " ***";
+            texteFinal += extractFileContent(file2, id2.toString());
         }
         texteFinal += '\n';
     }
+    //post traitement
+    /*
+    texteFinal = addNewlinesBeforeTables(texteFinal);
+
+    texteFinal = removeDelImage(texteFinal);
+
+    texteFinal = replaceHtmlTags(texteFinal);
+    */
     return texteFinal;
 }
 
@@ -329,7 +331,7 @@ function getLastAndPreviousFile() {
     return { lastfile: last_file, previousfile: previous_file };
 }
 
-function addNewlinesBeforeTables(markdown: string): string {
+export function addNewlinesBeforeTables(markdown: string): string {
     const lines = markdown.split(/\r?\n/);
     const result = [];
 
@@ -347,12 +349,12 @@ function addNewlinesBeforeTables(markdown: string): string {
     return result.join('\n');
 }
 
-function removeDelImage(str: string): string {
+export function removeDelImage(str: string): string {
     // Utilise une expression régulière pour trouver et supprimer les éléments encadrés par <del>...</del>
     return str.replace(/<del>!\[\[.*?\]\]<\/del>/g, '');
 }
 
-function replaceHtmlTags(input: string): string {
+export function replaceHtmlTags(input: string): string {
     return input
         .replace(/<del>\s*/g, '<del>***')
         .replace(/\s*<\/del>/g, '***</del> ')

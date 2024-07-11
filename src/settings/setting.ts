@@ -8,11 +8,13 @@ export interface Template {
 
 export interface MyPluginSettings {
     id: number;
+    apiKey : string;
     templates: Template[];
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
     id: -1,
+    apiKey : "api0key0example",
     templates : [
         {
             preview: `<div>
@@ -179,7 +181,6 @@ Règles de gestion :
     ]
     
 }
-
 export class SampleSettingTab extends PluginSettingTab {
     plugin: MyPlugin;
 
@@ -192,6 +193,21 @@ export class SampleSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
+        // Redmine API Key
+        containerEl.createEl('h2', { text: 'Redmine API Key' });
+        new Setting(containerEl)
+            .setName('API Key')
+            .addTextArea(text => text
+                .setValue(this.plugin.settings.apiKey || '')
+                .onChange(async (value) => {
+                    this.plugin.settings.apiKey = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        // Templates
+        containerEl.createEl('h2', { text: 'Templates' });
+
         this.plugin.settings.templates.forEach((template, index) => {
             const templateSetting = new Setting(containerEl)
                 .setName(`Template ${index + 1}`);
@@ -201,7 +217,7 @@ export class SampleSettingTab extends PluginSettingTab {
                 .setName('Preview HTML')
                 .setDesc('HTML Preview for the template')
                 .addTextArea(text => text
-                    .setValue(template.preview)
+                    .setValue(template.preview || '')
                     .onChange(async (value) => {
                         template.preview = value;
                         await this.plugin.saveSettings();
@@ -213,7 +229,7 @@ export class SampleSettingTab extends PluginSettingTab {
                 .setName('Content Markdown')
                 .setDesc('Markdown content for the template')
                 .addTextArea(text => text
-                    .setValue(template.content)
+                    .setValue(template.content || '')
                     .onChange(async (value) => {
                         template.content = value;
                         await this.plugin.saveSettings();
@@ -245,6 +261,7 @@ export class SampleSettingTab extends PluginSettingTab {
             });
     }
 }
+
 /*
 Backup des templates : 
 <div>

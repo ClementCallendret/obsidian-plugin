@@ -4,6 +4,7 @@ import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settin
 import { openTemplateModal } from './src/modal/modal';
 import { comparaison  } from './src/hierarchy/hierarchy';
 import {createFolders, get_next_number, set_ordre_from_file, set_order } from './src/utils/utils';
+import { getRedmineProject } from 'src/redmine/redmine';
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
@@ -30,6 +31,13 @@ export default class MyPlugin extends Plugin {
 			this.create_file(templateNumber,parentFolder);
 		});
 		
+		this.addRibbonIcon('folder-sync', 'Redmine', async (evt: MouseEvent) => {
+			//await getRedmineProject(key);
+			const apiKey = this.settings.apiKey;
+			let res = await getRedmineProject(apiKey);
+			new Notice('Redmine Sync Done !');
+
+		});
 		// Perform additional things with the ribbon
 		//ribbonIconE1.addClass('my-plugin-ribbon-class');
 
@@ -151,7 +159,6 @@ export default class MyPlugin extends Plugin {
 		//const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
 		//const parent_folder =  app.vault.getAbstractFileByPath(folderPath.path) as TFolder;
 		const template_list = this.settings.templates;
-		console.log("template list", template_list);
 		if (folder != null){
 			//let content = '';
 			const digits = await get_next_number(folder);
@@ -185,11 +192,8 @@ export default class MyPlugin extends Plugin {
 				content = scenario1 + scenario2 + regle_gestion;
 			}*/
 			let content : string = metadata + template_list[templateNumber-1].content.toString() + "";
-			console.log("content", content);
 			content.replace(/`/g, '\'');
 			content = content.replace(/\${digits}/g, digits.toString());
-			console.log("------------------------------------------")
-			console.log("content", content);
 
 			await this.app.vault.create(newFilePath, content);
 			this.app.workspace.openLinkText(newFilePath, '', true);
@@ -202,7 +206,6 @@ export default class MyPlugin extends Plugin {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (activeFile) {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-			console.log('active file', activeFile);
 			const parentFolder = activeFile.parent;
 			if (parentFolder != null){
 				const digits = await get_next_number(parentFolder);
@@ -253,8 +256,6 @@ export default class MyPlugin extends Plugin {
         }
     }
 	async loadSettings() {
-		console.log("load settings", await this.loadData());
-
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
@@ -278,6 +279,7 @@ export default class MyPlugin extends Plugin {
 		}
 		
 		//Init projet file
+		/*
 		const project_folder = vault.getFolderByPath("Projet");
 		if (project_folder?.children.length == 0){
 			const id = this.get_id()+1;
@@ -287,6 +289,7 @@ export default class MyPlugin extends Plugin {
 			regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG1 | Description |`;
 			await this.app.vault.create("/Projet/1 Titre1.md", metadata+scenario+regle_gestion);
 			await this.set_id(id);
-		}
+		}*/
 	}
 }
+

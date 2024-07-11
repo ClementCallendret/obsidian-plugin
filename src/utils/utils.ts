@@ -336,3 +336,17 @@ export async function createFolders(){
         await vault.createFolder("Finals");
     }
 }
+
+export function splitMetadataAndContent(input: string): { metadata: string, content: string } {
+    const metadataRegex = /^---([\s\S]*?)^---/m; // Regex pour capturer les métadonnées
+    const match = input.match(metadataRegex);
+
+    if (!match) {
+        throw new Error('Invalid input format: metadata section (enclosed by "---") not found.');
+    }
+
+    const metadata = match[1].trim();
+    const content = input.substring(match[0].length).trim();
+
+    return { metadata, content };
+}
