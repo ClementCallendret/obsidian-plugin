@@ -518,7 +518,7 @@ async reorder_files(parent_folder: TFolder, source_number: number, target_number
 }
 
   
-
+/*
   async get_numero_from_file(filepath: TFile): Promise<string | null> {
     let fileData = await this.app.vault.read(filepath);
     const numeroMatch = fileData.match(/numero:\s*"([\d.]+)"/);
@@ -531,7 +531,7 @@ async reorder_files(parent_folder: TFolder, source_number: number, target_number
 		const new_data = file_data.replace(/(numero:\s*")([\d.]+)"/, `$1${new_numero}"`);
 		await this.app.vault.modify(filepath, new_data);
 	}
-  
+  */
   getLastNumber(input: string): number {
     // Sépare la partie "nombre" de la partie "titre"
     const [numberPart] = input.split(" ");
@@ -731,7 +731,7 @@ getNumber(input: string): string {
               const newFolder = await app.vault.createFolder(`${folder.path}/${number} New Folder`);
               new Notice(`Created new folder ${newFolder.name}`);
               const id = this.MyPlugin.get_id() +1;
-              const metadata = `---\nid: ${id} \nordre: 0 \nnumero: 0 \n---\n`;		
+              const metadata = `---\nid: ${id}\n---\n`;		
               const newFile = await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
               this.MyPlugin.set_id(id);
             }

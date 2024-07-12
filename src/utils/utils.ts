@@ -1,6 +1,7 @@
 import {Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 
 //Comparer les versions de deux fichiers
+/*
 export async function compare_versions(a : TFile, b : TFile): Promise<number> {
     const num_a = await get_numero_from_file(a);
     const num_b = await get_numero_from_file(b);
@@ -27,6 +28,7 @@ export async function compare_versions(a : TFile, b : TFile): Promise<number> {
 
     return 0;
 }	
+*/
 
 //récupérer l'id des métadonnées
 export async function get_id_from_file(filepath:TFile){
@@ -55,31 +57,37 @@ export async function get_next_number(parent_folder: TFolder): Promise<string> {
 
 
 //Récupérer le numéro des métadonnées
+/*
 export async function get_numero_from_file(filepath:TFile){
     let filedata = await this.app.vault.read(filepath);
     const numeroMatch = filedata.match(/numero:\s*"([\d.]+)"/);
     const numero = numeroMatch ? numeroMatch[1] : null;
     return numero;
 }
-
+*/
 //Récupérer l'ordre des métadonnées
+/*
 export async function get_ordre_from_file(filepath:TFile){
     let filedata = await this.app.vault.read(filepath);
     const ordreMatch = filedata.match(/ordre:\s*(\d+)/);
     const ordre = ordreMatch ? parseInt(ordreMatch[1], 10) : null;
     return ordre;
 }
-
+*/
 	
 
 //set le numéro dans les métadonnées
+/*
 export async function set_numero_from_file(filepath:TFile, new_numero:string){
     let file_data = await this.app.vault.read(filepath);
     const new_data = file_data.replace(/(numero:\s*")([\d.]+)"/, `$1${new_numero}"`);
     await this.app.vault.modify(filepath, new_data);
 }
+    */
 
 //set l'ordre des différents fichiers dans les métadonnées
+
+/*
 export async function set_order(){
     const vault = this.app.vault;
     const files = [...vault.getMarkdownFiles().reverse()];
@@ -94,14 +102,16 @@ export async function set_order(){
         }
     }
 }
+    */
 
 //set l'ordre dans les métadonnées
+/*
 export async function set_ordre_from_file(filepath:TFile, new_ordre:number){
     let file_data = await this.app.vault.read(filepath);
     const new_data = file_data.replace(/(ordre:\s*)\d+/, `$1${new_ordre}`);
     await this.app.vault.modify(filepath, new_data);
 }
-
+*/
 //Check si le fichier est déjà ouvert : si Oui :  retourne la feuille, si Non : retourne null
 export function file_already_open (filePath : string) {
     const { workspace } = this.app;

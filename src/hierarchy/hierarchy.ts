@@ -7,19 +7,6 @@ import {TFolder, Notice, TFile, WorkspaceLeaf, TAbstractFile} from 'obsidian';
 import {createFolders, get_id_from_file, get_next_number } from '../utils/utils';
 import {FileModal, openFileModal} from '../modal/fileModal';
 
-
-async function compareMarkdownFiles() {
-    const file1 = app.vault.getAbstractFileByPath('Projet/1 Titre1.md');
-    const file2 =  app.vault.getAbstractFileByPath('Projet/2 Titre2.md');
-
-    const data1 = await app.vault.read(file1 as TFile);
-    const data2 = await app.vault.read(file2 as TFile);
-
-
-    const res = markdownDiff(data1, data2);
-    await app.vault.create('Projet/aDiff.md', res);
-} 
-
 //Comparer les données des fichiers 
 //Si une phrase a été changée, on marque l'entiereté de la phrase
 export async function compareString(oldContent: string, newContent: string) {

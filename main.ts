@@ -5,7 +5,7 @@ import { openTemplateModal } from './src/modal/templateModal';
 import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
-import { createFolders, get_next_number, set_ordre_from_file, set_order, get_id_from_file ,getNumberFromTitle} from './src/utils/utils';
+import { createFolders, get_next_number, get_id_from_file ,getNumberFromTitle} from './src/utils/utils';
 import { createIssue, getRedmineIssues, getRedmineProject, updateIssue } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
@@ -222,7 +222,7 @@ export default class MyPlugin extends Plugin {
 			
 			const newFilePath = `${folder.path}/${digits} Titre${digits}.md`;
 			const id = this.get_id()+1;
-			const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "${digits}" \n---\n`;		
+			const metadata = `---\nid: ${id}\n---\n`;		
 			/*
 			const scenario1 = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
 			const scenario2 = `Scenario SC${digits} - 2 :\n	-\n	-\n\n`
@@ -272,9 +272,9 @@ export default class MyPlugin extends Plugin {
 		
 				const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
 				let id = this.get_id()+1;
-				await this.app.vault.create(newFilePath, `---\nid: ${id} \nordre: 1 \nnumero: "${digits}.1" \n---`);
+				await this.app.vault.create(newFilePath, `---\nid: ${id}\n---`);
 				await this.set_id(id);
-				set_ordre_from_file(activeFile, 0);
+				//set_ordre_from_file(activeFile, 0);
 		
 				this.app.workspace.openLinkText(newFilePath, '', true);
 			}
