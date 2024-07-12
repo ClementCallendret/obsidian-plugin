@@ -730,7 +730,10 @@ getNumber(input: string): string {
               const number = await get_next_number(folder);
               const newFolder = await app.vault.createFolder(`${folder.path}/${number} New Folder`);
               new Notice(`Created new folder ${newFolder.name}`);
-              const newFile = await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, "");
+              const id = this.MyPlugin.get_id() +1;
+              const metadata = `---\nid: ${id} \nordre: 0 \nnumero: 0 \n---\n`;		
+              const newFile = await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
+              this.MyPlugin.set_id(id);
             }
         });
       });

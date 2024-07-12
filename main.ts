@@ -5,8 +5,8 @@ import { openTemplateModal } from './src/modal/templateModal';
 import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
-import { createFolders, get_next_number, set_ordre_from_file, set_order } from './src/utils/utils';
-import { createIssue, getRedmineProject } from 'src/redmine/redmine';
+import { createFolders, get_next_number, set_ordre_from_file, set_order, get_id_from_file ,getNumberFromTitle} from './src/utils/utils';
+import { createIssue, getRedmineIssues, getRedmineProject, updateIssue } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
 export default class MyPlugin extends Plugin {
@@ -36,23 +36,63 @@ export default class MyPlugin extends Plugin {
 		
 		this.addRibbonIcon('file-stack', 'Redmine upload', async (evt: MouseEvent) => {		
 			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
-			let res = await openFileModal(app,allFiles);
-			console.log("Files selected", res);
+			let filesSelected= await openFileModal(app,allFiles);
+			console.log("Files selected", filesSelected);
 			//get all issues
 			//if no issue created -> create a new one
-			createIssue(this.settings.apiKey,res[0]);
+			//createIssue(this.settings.apiKey,filesSelected[0]);
 			//else : modify already created issue
 			new Notice('Redmine Sync Done !');
 		});		
 
 		this.addRibbonIcon('folder-sync', 'Redmine', async (evt: MouseEvent) => {
-			//await getRedmineProject(key);
 			const apiKey = this.settings.apiKey;
-			let res = await getRedmineProject(apiKey);
-			console.log("Projects", res);
-			let project = await openRedmineProjectsModal(app, res);
+			//get all projects from redmine
+			let projects = await getRedmineProject(apiKey);
+			console.log("Projects", projects);
+			//select a project
+			let project = await openRedmineProjectsModal(app, projects);
 			console.log("Project selected", project);
+			console.log("Project id", project.id)
+			//get all issues from the selected project
+			let issues = await getRedmineIssues(apiKey, project.id);
+			console.log("Issues", issues);
+			//select files to be uploaded
+			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
+			let filesSelected = await openFileModal(app,allFiles);
+			console.log("Files selected", filesSelected);
 			new Notice('Redmine Sync Done !');
+
+			
+			//get all id issue
+			let idIssueList = [];
+			for (const issue of issues) {
+				const idIssue = getNumberFromTitle(issue.subject);
+				if (idIssue != null){
+					idIssueList.push(idIssue);
+				}
+			}
+			console.log("Id issue list", idIssueList);
+			filesSelected.forEach(async file => {
+				const fileId = await get_id_from_file(file);
+				//file id not in idIssueList -> create a new issu
+				console.log("File id", fileId);
+				if (fileId != null && !idIssueList.includes(fileId)){
+					console.log("Create issue");
+					createIssue(apiKey, file, project.id);
+				}
+				//file in idIssueList -> modify already created issue
+				else if (fileId != null){
+					console.log("Modify issue");
+					updateIssue(apiKey, file, issues[idIssueList.indexOf(fileId)].id);
+				}
+				else{
+					console.error("Error no ID in the file");
+				}
+			})
+			//for all files selected
+			//if no issue created -> create a new one
+			//else : modify already created issue
 
 		});
 		// Perform additional things with the ribbon

@@ -1,4 +1,3 @@
-import { get } from "http";
 import {Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 
 //Comparer les versions de deux fichiers
@@ -349,4 +348,12 @@ export function splitMetadataAndContent(input: string): { metadata: string, cont
     const content = input.substring(match[0].length).trim();
 
     return { metadata, content };
+}
+
+export function getNumberFromTitle(title: string): number | null {
+    const match = title.match(/^(\d+)/);
+    if (match) {
+        return parseInt(match[0], 10);
+    }
+    return null; // ou vous pouvez retourner une valeur par défaut si aucune correspondance n'est trouvée
 }

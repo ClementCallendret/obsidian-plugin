@@ -33,16 +33,18 @@ export async function getRedmineProject(apiKey : string) {
 
 }
 //projet + tracker + statut
-export async function createIssue(apiKey : string, file : TFile){
+export async function createIssue(apiKey : string, file : TFile, project_id : number){
+    const data = splitMetadataAndContent(await app.vault.read(file));
+    const title = await get_id_from_file(file) + " "+ file.basename;
     const requestParams: RequestUrlParam = {
         url: "https://ticket.iocean.fr/issues.json",
         method: "POST",
         contentType: "application/json",
         body: JSON.stringify({
             "issue": {
-                "project_id": 239,
-                "subject": "test depuis obsidian",
-                "description": "description test",
+                "project_id": project_id,
+                "subject": title,
+                "description": data.content,
             }
         }),
         headers: {
@@ -54,6 +56,40 @@ export async function createIssue(apiKey : string, file : TFile){
     const response = await requestUrl(requestParams)
     console.log("response",response);
     return response.json;
+}
+
+export async function updateIssue(apiKey : string, file : TFile, issueId : number){
+    const data = splitMetadataAndContent(await app.vault.read(file));
+    const title = await get_id_from_file(file) + " "+ file.basename;
+    const requestParams: RequestUrlParam = {
+        url: `https://ticket.iocean.fr/issues/${issueId}.json`,
+        method: "PUT",
+        contentType: "application/json",
+        body: JSON.stringify({
+            "issue": {
+                "subject": title,
+                "description": data.content,
+            }
+        }),
+        headers: {
+            "X-Redmine-API-Key": apiKey
+            },
+        throw: false // Cette propriété est optionnelle et par défaut à true
+    };
+    console.log("requestParams",requestParams);
+    const response = await requestUrl(requestParams)
+    console.log("response",response);
+}
+
+export async function getRedmineIssues(apiKey : string, projectId : number) {
+    const apiUrl = `https://ticket.iocean.fr/issues.json?project_id=${projectId}`;
+
+    const headers = {
+        "X-Redmine-API-Key": apiKey
+        };
+        
+    const response = await requestUrl({url: apiUrl, headers});
+    return response.json.issues;
 }
 
 //comparaison entre les fichiers
