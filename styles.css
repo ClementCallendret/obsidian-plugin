@@ -126,3 +126,46 @@
 }
 
 
+.validate-button {
+    display: flex; /* Utiliser flexbox */
+    justify-content: center; /* Centrer horizontalement */
+    align-items: center; /* Centrer verticalement */
+    margin: 0 auto 20px auto;
+    padding: 15px 30px; /* Augmenter le padding pour rendre le bouton plus grand */
+    font-size: 18px; /* Augmenter la taille de la police */
+    cursor: pointer;
+    text-align: center; /* Centrer le texte */
+    background-color: #4CAF50; /* Couleur de fond */
+    color: white; /* Couleur du texte */
+    border: none; /* Enlever les bordures */
+    border-radius: 5px; /* Ajouter des coins arrondis */
+    transition: background-color 0.3s; /* Transition pour le changement de couleur */
+}
+
+.validate-button:hover {
+    background-color: #45a049; /* Changer la couleur de fond au survol */
+}
+
+.file-grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.file-card {
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: calc(25% - 10px); /* Ajustez la largeur selon vos besoins */
+    text-align: center;
+    background-color: #272A33; /* Couleur par défaut */
+    word-wrap: break-word; /* Permet au texte de passer à la ligne */
+    overflow-wrap: break-word; /* Permet au texte de passer à la ligne */
+    white-space: normal; /* Permet le retour à la ligne */
+}
+
+.file-card h3 {
+    margin: 0;
+    padding: 10px 0;
+}

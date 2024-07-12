@@ -1,10 +1,12 @@
 import { Editor,MarkdownView, Notice, Plugin,TAbstractFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
-import { openTemplateModal } from './src/modal/modal';
+import { openTemplateModal } from './src/modal/templateModal';
+import {openFileModal} from './src/modal/fileModal'
+
 import { comparaison  } from './src/hierarchy/hierarchy';
-import {createFolders, get_next_number, set_ordre_from_file, set_order } from './src/utils/utils';
-import { getRedmineProject } from 'src/redmine/redmine';
+import { createFolders, get_next_number, set_ordre_from_file, set_order } from './src/utils/utils';
+import { createIssue, getRedmineProject } from 'src/redmine/redmine';
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
@@ -31,10 +33,22 @@ export default class MyPlugin extends Plugin {
 			this.create_file(templateNumber,parentFolder);
 		});
 		
+		this.addRibbonIcon('file-stack', 'Redmine upload', async (evt: MouseEvent) => {		
+			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
+			let res = await openFileModal(app,allFiles);
+			console.log("Files selected", res);
+			//get all issues
+			//if no issue created -> create a new one
+			createIssue(this.settings.apiKey,res[0]);
+			//else : modify already created issue
+			new Notice('Redmine Sync Done !');
+		});		
+
 		this.addRibbonIcon('folder-sync', 'Redmine', async (evt: MouseEvent) => {
 			//await getRedmineProject(key);
 			const apiKey = this.settings.apiKey;
 			let res = await getRedmineProject(apiKey);
+			console.log("Projects", res);
 			new Notice('Redmine Sync Done !');
 
 		});

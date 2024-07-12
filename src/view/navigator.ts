@@ -1,6 +1,6 @@
 import {App, ItemView,Menu,Modal, Notice, Plugin, TAbstractFile, TFile, TFolder,PluginManifest, WorkspaceLeaf } from "obsidian";
 import { delete_folder, file_already_open, get_next_number, getLastNumber, rename_folder_children} from "../utils/utils";
-import { openTemplateModal } from '../modal/modal';
+import { openTemplateModal } from '../modal/templateModal';
 import MyPlugin from "main";
 
 let folder_expand: Set<string> = new Set();

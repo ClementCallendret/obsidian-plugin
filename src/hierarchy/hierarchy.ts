@@ -182,13 +182,13 @@ export function compareFilesData(file1 : string, file2 : string): string{
         texteFinal += '\n';
     }
     //post traitement
-    /*
+    
     texteFinal = addNewlinesBeforeTables(texteFinal);
 
     texteFinal = removeDelImage(texteFinal);
 
     texteFinal = replaceHtmlTags(texteFinal);
-    */
+    
     return texteFinal;
 }
 

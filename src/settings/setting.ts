@@ -9,12 +9,14 @@ export interface Template {
 export interface MyPluginSettings {
     id: number;
     apiKey : string;
+    apiUrl : string;
     templates: Template[];
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
     id: -1,
     apiKey : "api0key0example",
+    apiUrl : 'https://ticket.iocean.fr',
     templates : [
         {
             preview: `<div>
@@ -193,6 +195,18 @@ export class SampleSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
+        //Redmine API Url
+        containerEl.createEl('h2', { text: 'Redmine API Url' });
+        new Setting(containerEl)
+            .setName('API Url')
+            .addTextArea(text => text
+                .setValue(this.plugin.settings.apiUrl || '')
+                .onChange(async (value) => {
+                    this.plugin.settings.apiUrl = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
         // Redmine API Key
         containerEl.createEl('h2', { text: 'Redmine API Key' });
         new Setting(containerEl)
@@ -261,175 +275,3 @@ export class SampleSettingTab extends PluginSettingTab {
             });
     }
 }
-
-/*
-Backup des templates : 
-<div>
-    <p>Scenario SC4 - 1 :</p>
-    <ul>
-        <li>-</li>
-        <li>-</li>
-    </ul>
-    <p>Règles de gestion :</p>
-    <ul>
-        <li>-</li>
-        <li>-</li>
-    </ul>
-</div>
-
-
-Scenario SC${digits} - 1 :
-	-
-	-
-
-Règles de gestion : 
-	-
-	-
-
-    ---------------------------------------
-    <div>
-    <p>Scenario SC5 - 1 :</p>
-    <ul>
-        <li>-</li>
-        <li>-</li>
-    </ul>
-    <p>Règles de gestion :</p>
-    <table class="custom-table-modal">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Description de la règle de gestion</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>RG5</td>
-                <td>Description</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-Scenario SC${digits} - 1 :
-	-
-	-
-
-Règles de gestion : 
- 
-|  Code  |  Description de la règle de gestion  |
-| :-------: | -------------------------------------- |
-| RG${digits} | Description |
-
----------------------------------------
-<div>
-    <p>6.1 Cas d'usage n°1:</p>
-    <ul>
-        <li>-</li>
-        <li>-</li>
-    </ul>
-    <p>Règles de gestion :</p>
-    <table class="custom-table-modal">
-        <thead>
-            <tr>
-                <th>N°</th>
-                <th>Cas d'usage</th>
-                <th>Règle</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>1</td>
-                <td>Texte</td>
-                <td>
-                    Cas valides :
-                    <ul>
-                        <li>-</li>
-                        <li>-</li>
-                    </ul>
-                    Cas d'échecs :
-                    <ul>
-                        <li>-</li>
-                        <li>-</li>
-                    </ul>
-                </td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Texte</td>
-                <td>
-                    Cas valides :
-                    <ul>
-                        <li>-</li>
-                        <li>-</li>
-                    </ul>
-                    Cas d'échecs :
-                    <ul>
-                        <li>-</li>
-                        <li>-</li>
-                    </ul>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-${digits}.1 Cas d'usage n°1:
-	-
-	-
-
-Règles de gestion : 
- 
-|  N°  |         Cas d'usage        |         Règle        |
-| :-------: | -------------------------------------- | -------------------------------------- |
-| 1 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|
-| 2 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|
-
---------------------------------------------------
- <div>
-    <p>Scenario SC1 - 1 :</p>
-    <ul>
-        <li>-</li>
-        <li>-</li>
-    </ul>
-    <p>Scenario SC1 - 2 :</p>
-    <ul>
-        <li>-</li>
-        <li>-</li>
-    </ul>
-    <p>Règles de gestion :</p>
-    <table class="custom-table-modal">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Description de la règle de gestion</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>RG1 - 1</td>
-                <td>Description</td>
-            </tr>
-            <tr>
-                <td>RG1 - 2</td>
-                <td>Description</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-Scenario SC${digits} - 1 :
-	-
-	-
-
-Scenario SC${digits} - 2 :
-	-
-	-
-
-Règles de gestion : 
- 
-|  Code  |  Description de la règle de gestion  |
-| :-------: | -------------------------------------- |
-| RG${digits} - 1 | Description |
-| RG${digits} - 2 | Description |
-
-*/

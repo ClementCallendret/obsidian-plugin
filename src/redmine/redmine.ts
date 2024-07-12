@@ -1,7 +1,7 @@
 import { markdownDiff } from 'markdown-diff';
-import { requestUrl } from 'obsidian';
+import { requestUrl, RequestUrlParam, TFile } from 'obsidian';
 import { addNewlinesBeforeTables, removeDelImage, replaceHtmlTags } from 'src/hierarchy/hierarchy';
-import { splitMetadataAndContent } from 'src/utils/utils';
+import {  get_id_from_file, splitMetadataAndContent } from 'src/utils/utils';
 
 const fs = require('fs');
 import { Redmine, RedmineTS } from 'redmine-ts';
@@ -11,7 +11,15 @@ curl -H "X-Redmine-API-Key: apiKey" https://ticket.iocean.fr/projects.json
 
 */
 
-
+interface RedmineIssue {
+    project_id: number;
+    subject: string;
+    description: string;
+    tracker_id?: number;
+    status_id?: number;
+    priority_id?: number;
+    assigned_to_id?: number;
+}
 
 export async function getRedmineProject(apiKey : string){
     const apiUrl = 'https://ticket.iocean.fr/projects.json';
@@ -20,13 +28,32 @@ export async function getRedmineProject(apiKey : string){
         "X-Redmine-API-Key": apiKey
         }
         
-        const response = await requestUrl({url: apiUrl, headers})
+    const response = await requestUrl({url: apiUrl, headers})
     return response.json;
 
 }
-
-export function redmineSync(){
-    
+//projet + tracker + statut
+export async function createIssue(apiKey : string, file : TFile){
+    const requestParams: RequestUrlParam = {
+        url: "https://ticket.iocean.fr/issues.json",
+        method: "POST",
+        contentType: "application/json",
+        body: JSON.stringify({
+            "issue": {
+                "project_id": 239,
+                "subject": "test depuis obsidian",
+                "description": "description test",
+            }
+        }),
+        headers: {
+            "X-Redmine-API-Key": apiKey
+            },
+        throw: false // Cette propriété est optionnelle et par défaut à true
+    };
+    console.log("requestParams",requestParams);
+    const response = await requestUrl(requestParams)
+    console.log("response",response);
+    return response.json;
 }
 
 //comparaison entre les fichiers
