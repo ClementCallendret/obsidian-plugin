@@ -217,16 +217,24 @@ export class ExampleView extends ItemView {
           console.error("Le chemin cible n'est pas valide.");
           return;
         }
-     
+        //Deplacement sur place
         if (sourcePath != targetPath){
-          this.insert_new_file(sourcePath, targetPath);
+          const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
+          const targetFile = this.app.vault.getAbstractFileByPath(targetPath);
+          
+          if (sourceFile != null && targetFile != null && getLastNumber(sourceFile.name) != 0 && getLastNumber(targetFile.name) != 0){
+            this.insert_new_file(sourcePath, targetPath);
+        }
+        else{
+          console.log("tentative de déplacement de notes")
         }
        
   
         // Mettre à jour l'interface après le déplacement si nécessaire
         await this.updateFileList();
         //this.app.workspace.openLinkText(new_path, "", true);
-      } catch (error) {
+      }
+     } catch (error) {
         console.error("Erreur lors du déplacement du fichier/dossier :", error);
       }
     } 
@@ -328,7 +336,6 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
           temporary_path = target_parent_folder.path + "/" + "temp" + " " + this.getTitleWithoutNumber(source.name);
           new_path = target_parent_folder.path + "/" + this.getNumber(target.name)+ " " + this.getTitleWithoutNumber(source.name);
         }
-        console.log("temporary_path", temporary_path);
         await this.app.fileManager.renameFile(source, temporary_path);
         
 
@@ -721,8 +728,9 @@ getNumber(input: string): string {
             const folder = app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
               const number = await get_next_number(folder);
-              const newFile = await app.vault.createFolder(`${folder.path}/${number} New Folder`);
-              new Notice(`Created new file ${newFile.name}`);
+              const newFolder = await app.vault.createFolder(`${folder.path}/${number} New Folder`);
+              new Notice(`Created new folder ${newFolder.name}`);
+              const newFile = await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, "");
             }
         });
       });

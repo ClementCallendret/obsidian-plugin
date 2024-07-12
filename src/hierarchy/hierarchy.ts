@@ -1,10 +1,12 @@
 import * as Diff from 'diff';
 import { markdownDiff } from 'markdown-diff';
 
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { Document, Packer, Paragraph, Tab, TextRun } from 'docx';
 import * as fs from 'fs';
-import {TFolder, Notice, TFile, WorkspaceLeaf} from 'obsidian';
+import {TFolder, Notice, TFile, WorkspaceLeaf, TAbstractFile} from 'obsidian';
 import {createFolders, get_id_from_file, get_next_number } from '../utils/utils';
+import {FileModal, openFileModal} from '../modal/fileModal';
+
 
 async function compareMarkdownFiles() {
     const file1 = app.vault.getAbstractFileByPath('Projet/1 Titre1.md');
@@ -115,12 +117,17 @@ export async function comparaison(){
     //creation du fichier de référence et de sa version pour la comparaison
    
     await concatenate_all_notes();
-     
-    let LastAndPrevious = getLastAndPreviousFile();
-    if (LastAndPrevious != null && LastAndPrevious.lastfile != null && LastAndPrevious?.previousfile != null) {
+    
+    const savesFiles = getSavesFiles();
+    //Comparaison possible
+    console.log("savesFiles",savesFiles);
+    if (savesFiles != undefined && savesFiles.length >= 2){
+        
+        let LastAndPrevious = await openFileModal(app,savesFiles)
+        console.log("LastAndPrevious",LastAndPrevious);
         //On lit les fichiers
-        let last_file_data = await app.vault.read(LastAndPrevious.lastfile as TFile);
-        let previous_file_data = await app.vault.read(LastAndPrevious.previousfile as TFile);
+        let last_file_data = await app.vault.read(LastAndPrevious[0] as TFile);
+        let previous_file_data = await app.vault.read(LastAndPrevious[1] as TFile);
     
         //On compare les fichiers
 
@@ -148,8 +155,10 @@ export async function comparaison(){
                 }
             });
     
+            
         }
     }
+
 
 }
 
@@ -361,4 +370,18 @@ export function replaceHtmlTags(input: string): string {
         .replace(/<ins>\s*/g, '***')
         .replace(/\s*<\/ins>/g, '***')
         .replace(/(\*\*\*\*\*\*)/g, '');
+}
+
+function getSavesFiles() : TFile[] | undefined {
+    let savesFolder: TFolder | null = null;
+    const root = app.vault.getRoot();
+    
+    // On récupère le chemin du dossier Saves
+    for (const child of root.children) {
+        if (child instanceof TFolder && child.name === 'Saves') {
+            savesFolder = child;
+            break;
+        }
+    }
+    return [...savesFolder?.children as TFile[]];
 }

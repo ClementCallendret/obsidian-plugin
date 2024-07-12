@@ -1,10 +1,9 @@
 import { App, Modal, TFile } from 'obsidian';
 
-export class FileModal extends Modal {
+class comparaisonModal extends Modal {
     onFilesSelected: (files: TFile[]) => void;
     files: TFile[];
     selectedFiles: Set<TFile>;
-    validateButton: HTMLButtonElement;
 
     constructor(app: App, fileList: TFile[], onFilesSelected: (files: TFile[]) => void) {
         super(app);
@@ -18,15 +17,13 @@ export class FileModal extends Modal {
 
         this.modalEl.style.width = '80%';
 
-        const titleEl = contentEl.createEl('h2', { text: 'Sélectionner les fichiers à synchroniser' });
+        const titleEl = contentEl.createEl('h2', { text: 'Sélectionner les fichiers à comparer' });
         titleEl.addClass('center-text');
 
         // Ajouter un bouton pour valider la sélection
-        this.validateButton = contentEl.createEl('button', { text: 'Valider la sélection' });
-        this.validateButton.addClass('validate-button');
-        this.validateButton.disabled = true; // Désactiver le bouton au départ
-        this.validateButton.style.backgroundColor = '#D3D3D3'; // Couleur grise par défaut
-        this.validateButton.addEventListener('click', () => {
+        const validateButton = contentEl.createEl('button', { text: 'Valider la sélection' });
+        validateButton.addClass('validate-button');
+        validateButton.addEventListener('click', () => {
             this.onFilesSelected(Array.from(this.selectedFiles));
             this.close();
         });
@@ -47,11 +44,10 @@ export class FileModal extends Modal {
                 if (this.selectedFiles.has(file)) {
                     this.selectedFiles.delete(file);
                     fileCard.style.backgroundColor = '#272A33';
-                } else {
+                } else if(this.selectedFiles.size < 2) {
                     this.selectedFiles.add(file);
                     fileCard.style.backgroundColor = '#4CAF50';
                 }
-                this.updateValidateButtonState();
             });
         });
     }
@@ -60,22 +56,12 @@ export class FileModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
     }
-
-    updateValidateButtonState() {
-        if (this.selectedFiles.size === 2) {
-            this.validateButton.disabled = false;
-            this.validateButton.style.backgroundColor = '#4CAF50'; // Couleur verte
-        } else {
-            this.validateButton.disabled = true;
-            this.validateButton.style.backgroundColor = '#D3D3D3'; // Couleur grise
-        }
-    }
 }
 
 // Méthode pour ouvrir la fenêtre modale
-export function openFileModal(app: App, files: TFile[]): Promise<TFile[]> {
+export function openComparaisonModal(app: App, files: TFile[]): Promise<TFile[]> {
     return new Promise<TFile[]>((resolve) => {
-        new FileModal(app, files, (selectedFiles: TFile[]) => {
+        new comparaisonModal(app, files, (selectedFiles: TFile[]) => {
             resolve(selectedFiles);
         }).open();
     });

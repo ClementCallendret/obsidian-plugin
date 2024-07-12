@@ -1,5 +1,5 @@
 import { markdownDiff } from 'markdown-diff';
-import { requestUrl, RequestUrlParam, TFile } from 'obsidian';
+import { requestUrl, RequestUrlParam, RequestUrlResponse, TFile } from 'obsidian';
 import { addNewlinesBeforeTables, removeDelImage, replaceHtmlTags } from 'src/hierarchy/hierarchy';
 import {  get_id_from_file, splitMetadataAndContent } from 'src/utils/utils';
 
@@ -21,7 +21,7 @@ interface RedmineIssue {
     assigned_to_id?: number;
 }
 
-export async function getRedmineProject(apiKey : string){
+export async function getRedmineProject(apiKey : string) {
     const apiUrl = 'https://ticket.iocean.fr/projects.json';
 
     const headers = {
@@ -29,7 +29,7 @@ export async function getRedmineProject(apiKey : string){
         }
         
     const response = await requestUrl({url: apiUrl, headers})
-    return response.json;
+    return response.json.projects;
 
 }
 //projet + tracker + statut

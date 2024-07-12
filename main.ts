@@ -7,6 +7,7 @@ import {openFileModal} from './src/modal/fileModal'
 import { comparaison  } from './src/hierarchy/hierarchy';
 import { createFolders, get_next_number, set_ordre_from_file, set_order } from './src/utils/utils';
 import { createIssue, getRedmineProject } from 'src/redmine/redmine';
+import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
@@ -49,6 +50,8 @@ export default class MyPlugin extends Plugin {
 			const apiKey = this.settings.apiKey;
 			let res = await getRedmineProject(apiKey);
 			console.log("Projects", res);
+			let project = await openRedmineProjectsModal(app, res);
+			console.log("Project selected", project);
 			new Notice('Redmine Sync Done !');
 
 		});
