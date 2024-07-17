@@ -144,8 +144,6 @@ export async function comparaison(){
             
         }
     }
-
-
 }
 
 
@@ -156,7 +154,6 @@ export function compareFilesData(file1 : string, file2 : string): string{
     //On récupère les ID des parties
     let list_id_file1 = extractNumbers(file1);
     let list_id_file2 = extractNumbers(file2);
-
 
 
     for (let id2 of list_id_file2){
@@ -282,6 +279,7 @@ function extractFileContent(data: string, fileId: string): string | null {
 }
 
 // get the last and previous file
+/*
 function getLastAndPreviousFile() {
     let reference: TFolder | null = null;
     const root = app.vault.getRoot();
@@ -323,6 +321,7 @@ function getLastAndPreviousFile() {
     }
     return { lastfile: last_file, previousfile: previous_file };
 }
+*/
 
 export function addNewlinesBeforeTables(markdown: string): string {
     const lines = markdown.split(/\r?\n/);

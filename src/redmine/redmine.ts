@@ -5,11 +5,7 @@ import {  formatDataObsidianToRedmine, getIDFromFile, splitMetadataAndContent } 
 
 const fs = require('fs');
 import { Redmine, RedmineTS } from 'redmine-ts';
-//import axios from 'axios';
-/*
-curl -H "X-Redmine-API-Key: apiKey" https://ticket.iocean.fr/projects.json
 
-*/
 
 interface RedmineIssue {
     project_id: number;

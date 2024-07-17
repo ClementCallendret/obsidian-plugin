@@ -1,34 +1,5 @@
 import {Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 
-//Comparer les versions de deux fichiers
-/*
-export async function compare_versions(a : TFile, b : TFile): Promise<number> {
-    const num_a = await get_numero_from_file(a);
-    const num_b = await get_numero_from_file(b);
-
-    if (num_a === null || num_b === null) {
-        return 0;
-    }
-    const a_parts = num_a.split('.').map(Number);
-    const b_parts = num_b.split('.').map(Number);
-
-    const length = Math.max(a_parts.length, b_parts.length);
-
-    for (let i = 0; i < length; i++) {
-        const aValue = a_parts[i] !== undefined ? a_parts[i] : 0;
-        const bValue = b_parts[i] !== undefined ? b_parts[i] : 0;
-
-        if (aValue > bValue) {
-            return 1;
-        }
-        if (aValue < bValue) {
-            return -1;
-        }
-    }
-
-    return 0;
-}	
-*/
 
 //récupérer l'id des métadonnées
 export async function getIDFromFile(filepath:TFile){
