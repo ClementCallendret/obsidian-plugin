@@ -48,6 +48,13 @@ class comparaisonModal extends Modal {
                     this.selectedFiles.add(file);
                     fileCard.style.backgroundColor = '#4CAF50';
                 }
+                if(this.selectedFiles.size == 2){
+                    validateButton.style.backgroundColor = "#45a049"
+                }
+                else{
+                    validateButton.style.backgroundColor = ""
+                }
+
             });
         });
     }

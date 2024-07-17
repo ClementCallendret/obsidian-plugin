@@ -44,7 +44,7 @@ export async function createIssue(apiKey : string, file : TFile, project_id : nu
             "issue": {
                 "project_id": project_id,
                 "subject": title,
-                "description": data.content,
+                "description":formatDataObsidianToRedmine(data.content),
             }
         }),
         headers: {
@@ -95,6 +95,7 @@ export async function getRedmineIssues(apiKey : string, projectId : number) {
 }
 
 //comparaison entre les fichiers
+/*
 export async function testRedmine2(response : any) {
     console.log(response.issues[0].subject);
     console.log(response.issues[0].description);
@@ -130,3 +131,4 @@ export async function testRedmine2(response : any) {
         }
     }
 }
+*/

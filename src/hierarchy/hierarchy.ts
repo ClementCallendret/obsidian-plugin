@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import {TFolder, Notice, TFile, WorkspaceLeaf, TAbstractFile} from 'obsidian';
 import {createFolders, get_id_from_file, get_next_number } from '../utils/utils';
 import {FileModal, openFileModal} from '../modal/fileModal';
+import { openComparaisonModal } from 'src/modal/comparaisonModal';
 
 //Comparer les données des fichiers 
 //Si une phrase a été changée, on marque l'entiereté de la phrase
@@ -103,13 +104,13 @@ export async function comparaison(){
     await createFolders();
     //creation du fichier de référence et de sa version pour la comparaison
    
-    await concatenate_all_notes();
+    await concatenateAllNotes();
     
     let savesFiles = getSavesFiles();
     //Comparaison possible
     if (savesFiles != undefined && savesFiles.length >= 2){
         savesFiles = orderFile(savesFiles);
-        let LastAndPrevious = await openFileModal(app,savesFiles)
+        let LastAndPrevious = await openComparaisonModal(app,savesFiles)
         console.log("LastAndPrevious",LastAndPrevious);
         //On lit les fichiers
         let last_file_data = await app.vault.read(LastAndPrevious[0] as TFile);
@@ -194,11 +195,9 @@ export function compareFilesData(file1 : string, file2 : string): string{
     return texteFinal;
 }
 
-export async function concatenate_all_notes() {
+export async function concatenateAllNotes() {
     const vault = this.app.vault;
     const files = vault.getMarkdownFiles().reverse();
-
-    const nb_files = files.length;
 
     let content_ref = '';
     let content_save = '';

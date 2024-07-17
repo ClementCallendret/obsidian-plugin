@@ -1,9 +1,19 @@
 import { App, Modal } from 'obsidian';
 
+
 interface Project {
+    created_on: string;
+    description: string;
+    homepage: string;
+    id: number;
+    identifier: string;
+    inherit_members: boolean;
+    is_public: boolean;
     name: string;
-    // Ajoutez d'autres propriétés si nécessaire
+    status: number;
+    updated_on: string;
 }
+
 
 export class RedmineProjectsModal extends Modal {
     onProjectSelected: (project: Project) => void;

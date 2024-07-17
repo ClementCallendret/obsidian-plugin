@@ -20,7 +20,6 @@ export default class MyPlugin extends Plugin {
 		this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
 			comparaison();
 			new Notice('Fichier de référence créé !');
-
 		});
 		
 		this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
@@ -28,14 +27,8 @@ export default class MyPlugin extends Plugin {
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 			this.create_file(templateNumber,parentFolder);
 		});
-		/*
-		this.addRibbonIcon('file-stack', 'Redmine upload', async (evt: MouseEvent) => {		
-			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
-			let filesSelected= await openFileModal(app,allFiles);
-			console.log("Files selected", filesSelected);
-			new Notice('Redmine Sync Done !');
-		});		
-		*/
+		
+
 		this.addRibbonIcon('folder-sync', 'Redmine', async (evt: MouseEvent) => {
 			const apiKey = this.settings.apiKey;
 			//get all projects from redmine
@@ -44,7 +37,6 @@ export default class MyPlugin extends Plugin {
 			//select a project
 			let project = await openRedmineProjectsModal(app, projects);
 			console.log("Project selected", project);
-			console.log("Project id", project.id)
 			//get all issues from the selected project
 			let issues = await getRedmineIssues(apiKey, project.id);
 			console.log("Issues", issues);
@@ -54,7 +46,6 @@ export default class MyPlugin extends Plugin {
 			console.log("Files selected", filesSelected);
 			new Notice('Redmine Sync Done !');
 
-			
 			//get all id issue
 			let idIssueList = [];
 			for (const issue of issues) {
@@ -63,6 +54,7 @@ export default class MyPlugin extends Plugin {
 					idIssueList.push(idIssue);
 				}
 			}
+
 			console.log("Id issue list", idIssueList);
 			filesSelected.forEach(async file => {
 				const fileId = await get_id_from_file(file);
@@ -159,7 +151,6 @@ export default class MyPlugin extends Plugin {
  
 	}
 
-
 	public get_id(): number {
 		return this.settings.id;
 	}
@@ -171,10 +162,7 @@ export default class MyPlugin extends Plugin {
 	}
 
 	async create_file(templateNumber : number, folder : TFolder) {
-		//let activeFile = this.app.workspace.getActiveFile() as TAbstractFile;
 		//Si le fichier actif n'est pas null et n'est pas dans la racine
-		//const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-		//const parent_folder =  app.vault.getAbstractFileByPath(folderPath.path) as TFolder;
 		const template_list = this.settings.templates;
 		if (folder != null){
 			const digits = await get_next_number(folder);
@@ -262,6 +250,7 @@ export default class MyPlugin extends Plugin {
 			for (const children of root_folder_children) {
 				if (children.name == "Projet") {
 					project_folder_created = true;
+					break;
 				}
 			}
 		}
