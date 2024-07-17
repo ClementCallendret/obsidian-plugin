@@ -31,7 +31,7 @@ export async function compare_versions(a : TFile, b : TFile): Promise<number> {
 */
 
 //récupérer l'id des métadonnées
-export async function get_id_from_file(filepath:TFile){
+export async function getIDFromFile(filepath:TFile){
     let filedata = await this.app.vault.read(filepath);
     const idMatch = filedata.match(/id:\s*(\d+)/);
     const id = idMatch ? parseInt(idMatch[1], 10) : null;
@@ -39,7 +39,7 @@ export async function get_id_from_file(filepath:TFile){
 }
 
 //Avoir le prochain numéro de fichier
-export async function get_next_number(parent_folder: TFolder): Promise<string> {
+export async function getNextNumber(parent_folder: TFolder): Promise<string> {
     let parent_number = getNumber(parent_folder.name);
     if (parent_number != ""){
         parent_number += ".";
@@ -113,7 +113,7 @@ export async function set_ordre_from_file(filepath:TFile, new_ordre:number){
 }
 */
 //Check si le fichier est déjà ouvert : si Oui :  retourne la feuille, si Non : retourne null
-export function file_already_open (filePath : string) {
+export function fileAlreadyOpen (filePath : string) {
     const { workspace } = this.app;
     const openLeaves = workspace.getLeavesOfType('markdown');
     for (const leaf of openLeaves) {
@@ -126,11 +126,11 @@ export function file_already_open (filePath : string) {
 }
 
 //Delete a folder and all its children
-export async function delete_folder(folder : TFolder){
+export async function deleteFolder(folder : TFolder){
     let children = folder.children;
     for (let child of children) {
         if (child instanceof TFolder) {
-            await delete_folder(child);
+            await deleteFolder(child);
         } else if (child instanceof TFile) {
             await app.vault.trash(child, true);
         }
@@ -139,7 +139,7 @@ export async function delete_folder(folder : TFolder){
 }
 
   // Renommer tous les fichiers dans un dossier + tous les sous-dossiers
-  export async function  rename_folder_children(parent_folder: TFolder, number: number) : Promise<void>{
+  export async function  renameFolderChildren(parent_folder: TFolder, number: number) : Promise<void>{
     let children = parent_folder.children;
     
     // Séparer les dossiers et les fichiers
@@ -153,16 +153,16 @@ export async function delete_folder(folder : TFolder){
     }
 
     for (let folder of folders) {
-        await rename_folder(folder, number);
+        await renameFolder(folder, number);
     }
 
     // Renommer les fichiers après les sous-dossiers
     for (let file of files) {
-        await rename_file(file, number);
+        await renameFile(file, number);
     }
   }
 
-export async function rename_folder(folder: TFolder, number: number) {
+export async function renameFolder(folder: TFolder, number: number) {
     let folder_number = getLastNumber(folder.name);
     let new_path = folder.path;
 
@@ -183,16 +183,16 @@ export async function rename_folder(folder: TFolder, number: number) {
     if (folder.path != new_path) {
         await this.app.fileManager.renameFile(folder, new_path);
         let renamedFolder = this.app.vault.getAbstractFileByPath(new_path) as TFolder;
-        await rename_folder_children(renamedFolder, 0);
+        await renameFolderChildren(renamedFolder, 0);
 
     } 
     else {
         // Récursion pour renommer les sous-dossiers et fichiers si pas de changement de nom
-        await rename_folder_children(folder, number);
+        await renameFolderChildren(folder, number);
     }
   }
 
-export async function rename_file(file: TFile, number: number) {
+export async function renameFile(file: TFile, number: number) {
   let file_number = getLastNumber(file.name);
   let new_path = file.path;
   // Cas 1 : le fichier est contenu dans un dossier qui s'est fait renommer
@@ -378,8 +378,6 @@ function removeSecondLineFromAllTables(markdownContent: string): string {
 }
 
 export function formatDataObsidianToRedmine(data : string): string {
-    console.log("data", data);
     data = removeSecondLineFromAllTables(data);
-    console.log("format data ", data);
     return data;
 }

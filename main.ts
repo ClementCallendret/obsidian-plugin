@@ -5,7 +5,7 @@ import { openTemplateModal } from './src/modal/templateModal';
 import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
-import { createFolders, get_next_number, get_id_from_file ,getNumberFromTitle} from './src/utils/utils';
+import { createFolders, getNextNumber, getIDFromFile ,getNumberFromTitle} from './src/utils/utils';
 import { createIssue, getRedmineIssues, getRedmineProject, updateIssue } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
@@ -25,7 +25,7 @@ export default class MyPlugin extends Plugin {
 		this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
 			const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
-			this.create_file(templateNumber,parentFolder);
+			this.createFile(templateNumber,parentFolder);
 		});
 		
 
@@ -33,17 +33,13 @@ export default class MyPlugin extends Plugin {
 			const apiKey = this.settings.apiKey;
 			//get all projects from redmine
 			let projects = await getRedmineProject(apiKey);
-			console.log("Projects", projects);
 			//select a project
 			let project = await openRedmineProjectsModal(app, projects);
-			console.log("Project selected", project);
 			//get all issues from the selected project
 			let issues = await getRedmineIssues(apiKey, project.id);
-			console.log("Issues", issues);
 			//select files to be uploaded
 			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
 			let filesSelected = await openFileModal(app,allFiles);
-			console.log("Files selected", filesSelected);
 			new Notice('Redmine Sync Done !');
 
 			//get all id issue
@@ -55,18 +51,14 @@ export default class MyPlugin extends Plugin {
 				}
 			}
 
-			console.log("Id issue list", idIssueList);
 			filesSelected.forEach(async file => {
-				const fileId = await get_id_from_file(file);
+				const fileId = await getIDFromFile(file);
 				//file id not in idIssueList -> create a new issu
-				console.log("File id", fileId);
 				if (fileId != null && !idIssueList.includes(fileId)){
-					console.log("Create issue");
 					createIssue(apiKey, file, project.id);
 				}
 				//file in idIssueList -> modify already created issue
 				else if (fileId != null){
-					console.log("Modify issue");
 					updateIssue(apiKey, file, issues[idIssueList.indexOf(fileId)].id);
 				}
 				else{
@@ -90,7 +82,7 @@ export default class MyPlugin extends Plugin {
 			callback: async () => {
 				const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 				const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
-				this.create_file(templateNumber, parentFolder);
+				this.createFile(templateNumber, parentFolder);
 			}
 		});
 
@@ -151,24 +143,24 @@ export default class MyPlugin extends Plugin {
  
 	}
 
-	public get_id(): number {
+	public getID(): number {
 		return this.settings.id;
 	}
 
 	//set l'id dans les settings
-	async set_id(id: number) {
+	async setID(id: number) {
 		this.settings.id = id;
 		await this.saveSettings();
 	}
 
-	async create_file(templateNumber : number, folder : TFolder) {
+	async createFile(templateNumber : number, folder : TFolder) {
 		//Si le fichier actif n'est pas null et n'est pas dans la racine
 		const template_list = this.settings.templates;
 		if (folder != null){
-			const digits = await get_next_number(folder);
+			const digits = await getNextNumber(folder);
 			
 			const newFilePath = `${folder.path}/${digits} Titre${digits}.md`;
-			const id = this.get_id()+1;
+			const id = this.getID()+1;
 			const metadata = `---\nid: ${id}\n---\n`;		
 		
 			let content : string = metadata + template_list[templateNumber-1].content.toString() + "";
@@ -177,32 +169,32 @@ export default class MyPlugin extends Plugin {
 
 			await this.app.vault.create(newFilePath, content);
 			this.app.workspace.openLinkText(newFilePath, '', true);
-			await this.set_id(id);
+			await this.setID(id);
 			
 		}
 	}
-
+	/*
 	async create_folder() {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (activeFile) {
 			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
 			const parentFolder = activeFile.parent;
 			if (parentFolder != null){
-				const digits = await get_next_number(parentFolder);
+				const digits = await getNextNumber(parentFolder);
 				const newFolderPath = `${folderPath}/${digits} Fichier`;
 				await this.app.vault.createFolder(newFolderPath);
 				
 		
 				const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
-				let id = this.get_id()+1;
+				let id = this.getID()+1;
 				await this.app.vault.create(newFilePath, `---\nid: ${id}\n---`);
-				await this.set_id(id);
+				await this.setID(id);
 		
 				this.app.workspace.openLinkText(newFilePath, '', true);
 			}
 		}
 	}
-
+	*/
 	async activateView() {
 		const { workspace } = this.app;
 	

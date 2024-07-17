@@ -1,7 +1,7 @@
 import { markdownDiff } from 'markdown-diff';
 import { requestUrl, RequestUrlParam, RequestUrlResponse, TFile } from 'obsidian';
 import { addNewlinesBeforeTables, removeDelImage, replaceHtmlTags } from 'src/hierarchy/hierarchy';
-import {  formatDataObsidianToRedmine, get_id_from_file, splitMetadataAndContent } from 'src/utils/utils';
+import {  formatDataObsidianToRedmine, getIDFromFile, splitMetadataAndContent } from 'src/utils/utils';
 
 const fs = require('fs');
 import { Redmine, RedmineTS } from 'redmine-ts';
@@ -35,7 +35,7 @@ export async function getRedmineProject(apiKey : string) {
 //projet + tracker + statut
 export async function createIssue(apiKey : string, file : TFile, project_id : number){
     const data = splitMetadataAndContent(await app.vault.read(file));
-    const title = await get_id_from_file(file) + " "+ file.basename;
+    const title = await getIDFromFile(file) + " "+ file.basename;
     const requestParams: RequestUrlParam = {
         url: "https://ticket.iocean.fr/issues.json",
         method: "POST",
@@ -52,9 +52,7 @@ export async function createIssue(apiKey : string, file : TFile, project_id : nu
             },
         throw: false // Cette propriété est optionnelle et par défaut à true
     };
-    console.log("requestParams",requestParams);
     const response = await requestUrl(requestParams)
-    console.log("response",response);
     return response.json;
 }
 
@@ -62,7 +60,7 @@ export async function createIssue(apiKey : string, file : TFile, project_id : nu
 //POUR GARDER LE CONTENU ORIGINAL REMPLACER "description" PAR "notes" 
 export async function updateIssue(apiKey : string, file : TFile, issueId : number){
     const data = splitMetadataAndContent(await app.vault.read(file));
-    const title = await get_id_from_file(file) + " "+ file.basename;
+    const title = await getIDFromFile(file) + " "+ file.basename;
     const requestParams: RequestUrlParam = {
         url: `https://ticket.iocean.fr/issues/${issueId}.json`,
         method: "PUT",
@@ -78,9 +76,7 @@ export async function updateIssue(apiKey : string, file : TFile, issueId : numbe
             },
         throw: false // Cette propriété est optionnelle et par défaut à true
     };
-    console.log("requestParams",requestParams);
     const response = await requestUrl(requestParams)
-    console.log("response",response);
 }
 
 export async function getRedmineIssues(apiKey : string, projectId : number) {

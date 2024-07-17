@@ -4,7 +4,7 @@ import { markdownDiff } from 'markdown-diff';
 import { Document, Packer, Paragraph, Tab, TextRun } from 'docx';
 import * as fs from 'fs';
 import {TFolder, Notice, TFile, WorkspaceLeaf, TAbstractFile} from 'obsidian';
-import {createFolders, get_id_from_file, get_next_number } from '../utils/utils';
+import {createFolders, getIDFromFile, getNextNumber } from '../utils/utils';
 import {FileModal, openFileModal} from '../modal/fileModal';
 import { openComparaisonModal } from 'src/modal/comparaisonModal';
 
@@ -111,7 +111,6 @@ export async function comparaison(){
     if (savesFiles != undefined && savesFiles.length >= 2){
         savesFiles = orderFile(savesFiles);
         let LastAndPrevious = await openComparaisonModal(app,savesFiles)
-        console.log("LastAndPrevious",LastAndPrevious);
         //On lit les fichiers
         let last_file_data = await app.vault.read(LastAndPrevious[0] as TFile);
         let previous_file_data = await app.vault.read(LastAndPrevious[1] as TFile);
@@ -124,7 +123,7 @@ export async function comparaison(){
         const parent_folder = app.vault.getFolderByPath("Références");
         let digits = 0;
         if (parent_folder != null) {
-            digits = +await get_next_number(parent_folder);
+            digits = +await getNextNumber(parent_folder);
         }
         
         await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
@@ -178,20 +177,13 @@ export function compareFilesData(file1 : string, file2 : string): string{
         texteFinal += '\n';
     }
     //post traitement
-    console.log("textefinal", texteFinal);
     
     texteFinal = addNewlinesBeforeTables(texteFinal);
 
-    console.log("textefinal", texteFinal);
-
     texteFinal = removeDelImage(texteFinal);
-
-    console.log("textefinal", texteFinal);
 
     texteFinal = replaceHtmlTags(texteFinal);
     
-    console.log("textefinal", texteFinal);
-
     return texteFinal;
 }
 
@@ -209,7 +201,7 @@ export async function concatenateAllNotes() {
             let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
             let data_wt_meta = match ? match[1] : null;
 
-            const id = await get_id_from_file(file);
+            const id = await getIDFromFile(file);
             if (id != null){
                 id_list.push(id);
                 content_save += `@@@@@@@@@@\n${id}\n@@@@@@@@@@\n`;
@@ -223,7 +215,7 @@ export async function concatenateAllNotes() {
     const parent_folder = app.vault.getFolderByPath("Références");
     let digits = 0;
     if (parent_folder != null) {
-        digits = +await get_next_number(parent_folder);
+        digits = +await getNextNumber(parent_folder);
     }
 
     //Creation fichier référence
