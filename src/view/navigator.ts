@@ -1,4 +1,4 @@
-import {App, ItemView,Menu,Modal, Notice, Plugin, TAbstractFile, TFile, TFolder,PluginManifest, WorkspaceLeaf } from "obsidian";
+import {App, ItemView,Menu,Modal, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import { delete_folder, file_already_open, get_next_number, getLastNumber, rename_folder_children} from "../utils/utils";
 import { openTemplateModal } from '../modal/templateModal';
 import MyPlugin from "main";
@@ -99,7 +99,6 @@ export class ExampleView extends ItemView {
           // Appel à la fonction createContextMenu avec les données appropriées
           if (filePath && type) {
               await this.createContextMenu(event, filePath, type);
-              //await this.updateFileList();
             }
 
       });
@@ -110,7 +109,6 @@ export class ExampleView extends ItemView {
 
         if (filePath) {
           if (type === "file") {
-            const file = this.app.vault.getAbstractFileByPath(filePath);
             const file_open = file_already_open(filePath);
             if (file_open) {
               this.app.workspace.setActiveLeaf(file_open);
@@ -187,32 +185,27 @@ export class ExampleView extends ItemView {
   private async handleDrop(event: DragEvent) {
     event.preventDefault();
     const target = event.target as HTMLElement;
-     if (target.classList.contains("sortable-item")) {
-      const container = this.containerEl.children[1];
-      const draggedIndex = Array.from(container.children).indexOf(this.draggedItem!);
-      const targetIndex = Array.from(container.children).indexOf(target);
-
-     
+     if (target.classList.contains("sortable-item")) {  
   
       // Récupérer le chemin du fichier/dossier source
       const sourcePath = this.draggedItem!.getAttribute("data-path");
-  
+
       if (!sourcePath) {
         console.error("Le chemin source n'est pas valide.");
         return;
       }
-  
+
       try {
         // Obtenir l'objet TAbstractFile correspondant au chemin source
         const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
-  
+
         if (!sourceFile) {
           throw new Error("Impossible de trouver le fichier source.");
         }
-  
+
         // Récupérer le chemin du fichier/dossier cible
         const targetPath = target.getAttribute("data-path");
-  
+
         if (!targetPath) {
           console.error("Le chemin cible n'est pas valide.");
           return;
@@ -228,32 +221,26 @@ export class ExampleView extends ItemView {
         else{
           console.log("tentative de déplacement de notes")
         }
-       
-  
         // Mettre à jour l'interface après le déplacement si nécessaire
         await this.updateFileList();
-        //this.app.workspace.openLinkText(new_path, "", true);
       }
-     } catch (error) {
+      } catch (error) {
         console.error("Erreur lors du déplacement du fichier/dossier :", error);
       }
     } 
   }
   
-  
-  
-  
-
   private handleDragEnd(event: DragEvent) {
     const container = this.containerEl.children[1];
-    const items = container.getElementsByClassName("sortable-item");
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i] as HTMLElement;
-      item.classList.remove("drag-over");
-      item.classList.remove("dragging");
-    }
+    const items = Array.from(container.getElementsByClassName("sortable-item"));
+    for (const item of items) {
+      const element = item as HTMLElement;
+      element.classList.remove("drag-over");
+      element.classList.remove("dragging");
+  }
     this.draggedItem = null;
   }
+
 
 private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<TreeFile[]> {
     let result: TreeFile[] = [];
@@ -349,7 +336,7 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
           // Renommer les enfants si le fichier source est un dossier
           let source = this.app.vault.getAbstractFileByPath(new_path);
           if (source instanceof TFolder) {
-            await this.rename_folder_children(source as TFolder, 0);
+            await this.rename_folder_children(source, 0);
           }
         };       
       } 
@@ -357,7 +344,7 @@ private async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<
       else {
         if (source?.parent != this.app.vault.getRoot()){
           //Incrémenter de 1 les fichiers dans le dossier cible
-          await this.rename_folder_children(target_parent_folder as TFolder, target_file_last_number);
+          await this.rename_folder_children(target_parent_folder, target_file_last_number);
           //On récupère le parent du fichier source avant de le déplacer 
           let source_parent;
           if (source?.parent != null){
@@ -483,12 +470,12 @@ async rename_file(file: TFile, number: number) {
 // Réordonner les fichiers dans le dossier pour libérer l'espace pour le fichier source
 async reorder_files(parent_folder: TFolder, source_number: number, target_number: number): Promise<void> {
   // Copie du dossier parent et de ses enfants
-  const children = [... parent_folder.children as TAbstractFile[]];
+  const children = [... parent_folder.children ];
 
   // Si le fichier source est déplacé vers l'avant dans la numérotation
   if (source_number > target_number) {
       children.reverse();
-      for (const child of children as TAbstractFile[]) {
+      for (const child of children) {
           let child_last_number = this.getLastNumber(child.name);
           if (child_last_number >= target_number && child_last_number < source_number) {
               let new_path = parent_folder.path + "/" + this.incrementLastNumber(child.name);
@@ -496,21 +483,21 @@ async reorder_files(parent_folder: TFolder, source_number: number, target_number
 
               // Child est un Folder
               if (child instanceof TFolder) {
-                  await this.rename_folder_children(child as TFolder, 0);
+                  await this.rename_folder_children(child, 0);
               }
           }
       }
   }
   // Si le fichier source est déplacé vers l'arrière dans la numérotation
   else {
-    for (const child of children as TAbstractFile[]) {
+    for (const child of children) {
       let child_last_number = this.getLastNumber(child.name);
       if (child_last_number <= target_number && child_last_number > source_number) {
         let new_path = parent_folder.path + "/" + this.decrementLastNumber(child.name);
         await this.app.fileManager.renameFile(child, new_path);
         // Child est un Folder
         if (child instanceof TFolder) {
-            await this.rename_folder_children(child as TFolder, 0);
+            await this.rename_folder_children(child, 0);
         }
       }
     }
@@ -518,32 +505,18 @@ async reorder_files(parent_folder: TFolder, source_number: number, target_number
 }
 
   
-/*
-  async get_numero_from_file(filepath: TFile): Promise<string | null> {
-    let fileData = await this.app.vault.read(filepath);
-    const numeroMatch = fileData.match(/numero:\s*"([\d.]+)"/);
-    const numero = numeroMatch ? numeroMatch[1] : null;
-    return numero;
-  }
-
-  async set_numero_from_file(filepath:TFile, new_numero:string){
-		let file_data = await this.app.vault.read(filepath);
-		const new_data = file_data.replace(/(numero:\s*")([\d.]+)"/, `$1${new_numero}"`);
-		await this.app.vault.modify(filepath, new_data);
-	}
-  */
-  getLastNumber(input: string): number {
-    // Sépare la partie "nombre" de la partie "titre"
-    const [numberPart] = input.split(" ");
-    
-    // Sépare les nombres par les points
-    const numberArray = numberPart.split(".");
-    
-    // Récupère le dernier élément du tableau
-    const lastNumber = numberArray.pop();
-    
-    // Convertit en nombre
-    return lastNumber ? parseFloat(lastNumber) : NaN;
+getLastNumber(input: string): number {
+  // Sépare la partie "nombre" de la partie "titre"
+  const [numberPart] = input.split(" ");
+  
+  // Sépare les nombres par les points
+  const numberArray = numberPart.split(".");
+  
+  // Récupère le dernier élément du tableau
+  const lastNumber = numberArray.pop();
+  
+  // Convertit en nombre
+  return lastNumber ? parseFloat(lastNumber) : NaN;
 }
 
 getNumber(input: string): string {
@@ -554,18 +527,18 @@ getNumber(input: string): string {
   return numberPart;
 }
 
- getTitleWithoutNumber(input: string): string {
-  // Trouve l'indice du premier espace
-  const spaceIndex = input.indexOf(" ");
-  
-  // Retourne la partie après le premier espace
-  if (spaceIndex !== -1) {
-      return input.substring(spaceIndex + 1);
-  } else {
-      // Si aucun espace n'est trouvé, retourne la chaîne complète
-      return input;
+  getTitleWithoutNumber(input: string): string {
+    // Trouve l'indice du premier espace
+    const spaceIndex = input.indexOf(" ");
+    
+    // Retourne la partie après le premier espace
+    if (spaceIndex !== -1) {
+        return input.substring(spaceIndex + 1);
+    } else {
+        // Si aucun espace n'est trouvé, retourne la chaîne complète
+        return input;
+    }
   }
-}
 
   incrementLastNumber(input: string): string {
     const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex pour capturer le dernier nombre
@@ -732,7 +705,7 @@ getNumber(input: string): string {
               new Notice(`Created new folder ${newFolder.name}`);
               const id = this.MyPlugin.get_id() +1;
               const metadata = `---\nid: ${id}\n---\n`;		
-              const newFile = await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
+              await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
               this.MyPlugin.set_id(id);
             }
         });
@@ -762,7 +735,7 @@ getNumber(input: string): string {
               if (folder instanceof TFolder && folder.parent != null) {
                   const folder_parent = { ...folder.parent };
                   const folder_name = folder.name + "";
-                  await delete_folder(folder as TFolder);
+                  await delete_folder(folder);
                   await rename_folder_children(folder_parent as TFolder, -(getLastNumber(folder_name)));
                   await this.updateFileList();
                   new Notice(`Deleted ${folder.name}`);

@@ -1,4 +1,4 @@
-import { Editor,MarkdownView, Notice, Plugin,TAbstractFile, TFolder, WorkspaceLeaf } from 'obsidian';
+import { Notice, Plugin,TAbstractFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
 import { openTemplateModal } from './src/modal/templateModal';
@@ -15,20 +15,15 @@ export default class MyPlugin extends Plugin {
 
 	async onload() {
         await this.loadSettings();
-/*
-		this.addRibbonIcon("dice", "Activate view", () => {
-		this.activateView();
-		});
-		*/
+
 		// This creates an icon in the left ribbon.
-		
-		const ribbonIconE1 = this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
+		this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
 			comparaison();
 			new Notice('Fichier de référence créé !');
 
 		});
 		
-		const ribbonIconE2 = this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
+		this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
 			const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 			this.create_file(templateNumber,parentFolder);
@@ -38,10 +33,6 @@ export default class MyPlugin extends Plugin {
 			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
 			let filesSelected= await openFileModal(app,allFiles);
 			console.log("Files selected", filesSelected);
-			//get all issues
-			//if no issue created -> create a new one
-			//createIssue(this.settings.apiKey,filesSelected[0]);
-			//else : modify already created issue
 			new Notice('Redmine Sync Done !');
 		});		
 
@@ -95,13 +86,12 @@ export default class MyPlugin extends Plugin {
 			//else : modify already created issue
 
 		});
-		// Perform additional things with the ribbon
-		//ribbonIconE1.addClass('my-plugin-ribbon-class');
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
+		//Choose a template and create a file 
 		this.addCommand({
 			id: 'template-selection',
 			name: 'Template Selection',
@@ -112,6 +102,7 @@ export default class MyPlugin extends Plugin {
 			}
 		});
 
+		//Create a reference file and a final file
 		this.addCommand({
 			id : 'create-reference-file',
 			name : 'Create reference file',
@@ -121,47 +112,18 @@ export default class MyPlugin extends Plugin {
 			},
 		});
 
-
-		/*
-		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						openTemplateModal(this.app);
-					}
+			id : 'activate-navigator',
+			name : 'Activate navigator',
+			callback: () => {
+				this.activateView();
+			},		})
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
-		*/
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			//console.log('click', evt);
-		});
-
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		//this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 
         this.registerEvent(
             this.app.vault.on('create', async (file: TAbstractFile) => {
@@ -198,8 +160,6 @@ export default class MyPlugin extends Plugin {
 	}
 
 
-	onunload() {}
-
 	public get_id(): number {
 		return this.settings.id;
 	}
@@ -217,37 +177,12 @@ export default class MyPlugin extends Plugin {
 		//const parent_folder =  app.vault.getAbstractFileByPath(folderPath.path) as TFolder;
 		const template_list = this.settings.templates;
 		if (folder != null){
-			//let content = '';
 			const digits = await get_next_number(folder);
 			
 			const newFilePath = `${folder.path}/${digits} Titre${digits}.md`;
 			const id = this.get_id()+1;
 			const metadata = `---\nid: ${id}\n---\n`;		
-			/*
-			const scenario1 = `Scenario SC${digits} - 1 :\n	-\n	-\n\n`
-			const scenario2 = `Scenario SC${digits} - 2 :\n	-\n	-\n\n`
-
-			const casUsage = `${digits}.1 Cas d'usage n°1:\n	-\n	-\n\n`;
-
-			let regle_gestion = `Règles de gestion : \n`;
-			if (templateNumber == 1 ){
-				regle_gestion += `	-\n	-\n`
-				content = scenario1 + regle_gestion;
-			} 
-			else if (templateNumber == 2){
-				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} | Description |`;
-				content = scenario1 + regle_gestion;
-			}
-			else if(templateNumber == 3){
-				regle_gestion += ` \n|  N°  |         Cas d'usage        |         Règle        |\n| :-------: | -------------------------------------- | -------------------------------------- |\n| 1 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|\n| 2 | Texte | Cas valides :<br>	-<br>	-<br> <br>Cas d'échecs :<br>	-<br>	-<br>|`
-				content = casUsage + regle_gestion;
-
-			}
-			//template number 4
-			else {
-				regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG${digits} - 1 | Description |\n| RG${digits} - 2 | Description |`;
-				content = scenario1 + scenario2 + regle_gestion;
-			}*/
+		
 			let content : string = metadata + template_list[templateNumber-1].content.toString() + "";
 			content.replace(/`/g, '\'');
 			content = content.replace(/\${digits}/g, digits.toString());
@@ -274,7 +209,6 @@ export default class MyPlugin extends Plugin {
 				let id = this.get_id()+1;
 				await this.app.vault.create(newFilePath, `---\nid: ${id}\n---`);
 				await this.set_id(id);
-				//set_ordre_from_file(activeFile, 0);
 		
 				this.app.workspace.openLinkText(newFilePath, '', true);
 			}
@@ -313,7 +247,7 @@ export default class MyPlugin extends Plugin {
         }
     }
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = { ...DEFAULT_SETTINGS, ...await this.loadData()};
 	}
 
 	async saveSettings() {
@@ -334,19 +268,6 @@ export default class MyPlugin extends Plugin {
 		if(!project_folder_created){
 			await vault.createFolder("Projet");
 		}
-		
-		//Init projet file
-		/*
-		const project_folder = vault.getFolderByPath("Projet");
-		if (project_folder?.children.length == 0){
-			const id = this.get_id()+1;
-			const metadata = `---\nid: ${id} \nordre: 0 \nnumero: "1" \n---\n`;	
-			const scenario = `Scenario SC 1 - 1 :\n	-\n	-\n\n`
-			let regle_gestion = `Règles de gestion : \n`;
-			regle_gestion += ` \n|  Code  |  Description de la règle de gestion  |\n| :-------: | -------------------------------------- |\n| RG1 | Description |`;
-			await this.app.vault.create("/Projet/1 Titre1.md", metadata+scenario+regle_gestion);
-			await this.set_id(id);
-		}*/
 	}
 }
 
