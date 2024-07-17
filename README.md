@@ -1,96 +1,105 @@
-# Obsidian Sample Plugin
+# Obsidian FileFlow Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+## Description
 
-This project uses Typescript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in Typescript Definition format, which contains TSDoc comments describing what it does.
+**Obsidian FileFlow Plugin** is a powerful plugin for the [Obsidian](https://obsidian.md/) application. It offers three major features to enhance your note-taking and project management experience:
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+1. **File Manager with Automatic Hierarchization**: Automatically organize your files and folders for a cleaner and more intuitive note structure.
+2. **Template Manager**: Create and manage templates to standardize and speed up the creation of new notes.
+3. **Redmine Synchronization Module**: Sync your Obsidian notes with Redmine for seamless project management.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Features
 
-## First time developing plugins?
+### 1. File Manager with Automatic Hierarchization
 
-Quick starting guide for new plugin devs:
+- Automatically classifies files and folders.
+- Creates folders and subfolders for better organization.
+- Easily find your notes thanks to a logical hierarchical structure.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### 2. Template Manager
 
-## Releasing new releases
+- Create personalized templates for your notes.
+- Quickly access your templates via a user-friendly interface.
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### 3. Redmine Synchronization Module
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+- Sync your notes with your Redmine tickets.
+- Update your tickets directly from Obsidian.
+- Keep track of your tasks and projects in real time.
 
-## Adding your plugin to the community plugin list
+## Installation
 
-- Check https://github.com/obsidianmd/obsidian-releases/blob/master/plugin-review.md
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+1. Download the plugin from the [GitHub repository](https://github.com/ClementCallendret/obsidian-plugin).
+2. Extract the contents into Obsidian's plugins folder: `YourVault/.obsidian/plugins`.
+3. Enable the plugin from the Obsidian settings.
 
-## How to use
+## Usage
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### File Manager
 
-## Manually installing the plugin
+1. Access the file manager via the sidebar.
+2. Let the plugin automatically organize your notes according to the defined rules.
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+### Template Manager
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
+1. Create a new template via the templates menu in the settings.
+2. Apply a template to a new note by selecting the desired template from the menu.
 
-## Funding URL
+### Redmine Synchronization
 
-You can include funding URLs where people who use your plugin can financially support it.
+1. Configure your Redmine connection in the plugin settings.
+2. Sync your notes with Redmine tickets.
+3. Update your tickets directly from Obsidian for simplified management.
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+---
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+## Description
 
-If you have multiple URLs, you can also do:
+**Obsidian FileFlow Plugin** est un plugin puissant pour l'application [Obsidian](https://obsidian.md/). Il offre trois fonctionnalités majeures pour améliorer votre expérience de prise de notes et de gestion de projet :
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+1. **Gestionnaire de fichiers avec hiérarchisation automatique** : Organisez automatiquement vos fichiers et dossiers pour une structure de notes plus propre et plus intuitive.
+2. **Gestionnaire de templates** : Créez et gérez des templates pour standardiser et accélérer la création de nouvelles notes.
+3. **Module de synchronisation avec Redmine** : Synchronisez vos notes Obsidian avec Redmine pour une gestion de projet transparente.
 
-## API Documentation
+## Fonctionnalités
 
-See https://github.com/obsidianmd/obsidian-api
+### 1. Gestionnaire de fichiers avec hiérarchisation automatique
+
+- Classe automatiquement les fichiers et dossiers.
+- Crée des dossiers et sous-dossiers pour une meilleure organisation.
+- Permet de retrouver facilement vos notes grâce à une structure hiérarchique logique.
+
+### 2. Gestionnaire de templates
+
+- Créez des templates personnalisés pour vos notes.
+- Accédez rapidement à vos templates via une interface conviviale.
+
+### 3. Module de synchronisation avec Redmine
+
+- Synchronisez vos notes avec vos tickets Redmine.
+- Mettez à jour vos tickets directement depuis Obsidian.
+- Gardez une trace de vos tâches et projets en temps réel.
+
+## Installation
+
+1. Téléchargez le plugin depuis le [dépôt GitHub](https://github.com/ClementCallendret/obsidian-plugin).
+2. Extrayez le contenu dans le dossier des plugins d'Obsidian : `YourVault/.obsidian/plugins`.
+3. Activez le plugin depuis les paramètres d'Obsidian.
+
+## Utilisation
+
+### Gestionnaire de fichiers
+
+1. Accédez au gestionnaire de fichiers via le panneau latéral.
+2. Laissez le plugin organiser automatiquement vos notes selon les règles définies.
+
+### Gestionnaire de templates
+
+1. Créez un nouveau template via le menu des templates dans les paramètres.
+2. Appliquez un template à une nouvelle note en sélectionnant le template désiré dans le menu.
+
+### Synchronisation avec Redmine
+
+1. Configurez votre connexion à Redmine dans les paramètres du plugin.
+2. Synchronisez vos notes avec les tickets Redmine.
+3. Mettez à jour vos tickets directement depuis Obsidian pour une gestion simplifiée.
