@@ -367,3 +367,19 @@ export function getNumberFromTitle(title: string): number | null {
     }
     return null; // ou vous pouvez retourner une valeur par défaut si aucune correspondance n'est trouvée
 }
+
+function removeSecondLineFromAllTables(markdownContent: string): string {
+    // Regex pour identifier les tableaux Markdown
+    const tableRegex = /(\|.*\|)\n(\|.*\|)\n((?:\|.*\|(?:\n|$))+)/g;
+    return markdownContent.replace(tableRegex, (match, header, separator, rows) => {
+        // On reforme le tableau en supprimant la deuxième ligne
+        return `${header}\n${rows}`;
+    });
+}
+
+export function formatDataObsidianToRedmine(data : string): string {
+    console.log("data", data);
+    data = removeSecondLineFromAllTables(data);
+    console.log("format data ", data);
+    return data;
+}

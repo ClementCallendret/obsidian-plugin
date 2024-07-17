@@ -28,14 +28,14 @@ export default class MyPlugin extends Plugin {
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 			this.create_file(templateNumber,parentFolder);
 		});
-		
+		/*
 		this.addRibbonIcon('file-stack', 'Redmine upload', async (evt: MouseEvent) => {		
 			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
 			let filesSelected= await openFileModal(app,allFiles);
 			console.log("Files selected", filesSelected);
 			new Notice('Redmine Sync Done !');
 		});		
-
+		*/
 		this.addRibbonIcon('folder-sync', 'Redmine', async (evt: MouseEvent) => {
 			const apiKey = this.settings.apiKey;
 			//get all projects from redmine

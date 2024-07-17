@@ -1,7 +1,7 @@
 import { markdownDiff } from 'markdown-diff';
 import { requestUrl, RequestUrlParam, RequestUrlResponse, TFile } from 'obsidian';
 import { addNewlinesBeforeTables, removeDelImage, replaceHtmlTags } from 'src/hierarchy/hierarchy';
-import {  get_id_from_file, splitMetadataAndContent } from 'src/utils/utils';
+import {  formatDataObsidianToRedmine, get_id_from_file, splitMetadataAndContent } from 'src/utils/utils';
 
 const fs = require('fs');
 import { Redmine, RedmineTS } from 'redmine-ts';
@@ -58,6 +58,8 @@ export async function createIssue(apiKey : string, file : TFile, project_id : nu
     return response.json;
 }
 
+//update une issue en changeant la description
+//POUR GARDER LE CONTENU ORIGINAL REMPLACER "description" PAR "notes" 
 export async function updateIssue(apiKey : string, file : TFile, issueId : number){
     const data = splitMetadataAndContent(await app.vault.read(file));
     const title = await get_id_from_file(file) + " "+ file.basename;
@@ -68,7 +70,7 @@ export async function updateIssue(apiKey : string, file : TFile, issueId : numbe
         body: JSON.stringify({
             "issue": {
                 "subject": title,
-                "description": data.content,
+                "description": formatDataObsidianToRedmine(data.content),
             }
         }),
         headers: {

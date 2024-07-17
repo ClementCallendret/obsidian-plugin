@@ -105,11 +105,10 @@ export async function comparaison(){
    
     await concatenate_all_notes();
     
-    const savesFiles = getSavesFiles();
+    let savesFiles = getSavesFiles();
     //Comparaison possible
-    console.log("savesFiles",savesFiles);
     if (savesFiles != undefined && savesFiles.length >= 2){
-        
+        savesFiles = orderFile(savesFiles);
         let LastAndPrevious = await openFileModal(app,savesFiles)
         console.log("LastAndPrevious",LastAndPrevious);
         //On lit les fichiers
@@ -178,13 +177,20 @@ export function compareFilesData(file1 : string, file2 : string): string{
         texteFinal += '\n';
     }
     //post traitement
+    console.log("textefinal", texteFinal);
     
     texteFinal = addNewlinesBeforeTables(texteFinal);
 
+    console.log("textefinal", texteFinal);
+
     texteFinal = removeDelImage(texteFinal);
+
+    console.log("textefinal", texteFinal);
 
     texteFinal = replaceHtmlTags(texteFinal);
     
+    console.log("textefinal", texteFinal);
+
     return texteFinal;
 }
 
@@ -231,9 +237,9 @@ export async function concatenate_all_notes() {
 }
 
 //get number from file name
-export function getNumber(input: string): string {
+export function getNumber(fileTitle: string): string {
     // Sépare la partie "nombre" de la partie "titre"
-    const [numberPart] = input.split(" ");
+    const [numberPart] = fileTitle.split(" ");
     
     // Retourne directement la partie "nombre"
     return numberPart;
@@ -352,10 +358,10 @@ export function removeDelImage(str: string): string {
 
 export function replaceHtmlTags(input: string): string {
     return input
-        .replace(/<del>\s*/g, '<del>***')
-        .replace(/\s*<\/del>/g, '***</del> ')
-        .replace(/<ins>\s*/g, '***')
-        .replace(/\s*<\/ins>/g, '***')
+        .replace(/<del>/g, '<del>***')
+        .replace(/<\/del>/g, '***</del> ')
+        .replace(/<ins>/g, ' ***')
+        .replace(/<\/ins>/g, '***')
         .replace(/(\*\*\*\*\*\*)/g, '');
 }
 
@@ -370,5 +376,14 @@ function getSavesFiles() : TFile[] | undefined {
             break;
         }
     }
-    return [...savesFolder?.children as TFile[]];
+    return savesFolder?.children as TFile[];
+}
+
+function orderFile(fileList :TFile []): TFile[] {
+    let filesOrdered : TFile[] = new Array(fileList.length);
+    for (const file of fileList){
+        let num : number = Number(getNumber(file.basename));
+        filesOrdered[num-1] = file;
+    }
+    return filesOrdered;
 }
