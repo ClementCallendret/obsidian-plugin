@@ -1,6 +1,6 @@
 import { App, Modal, TFile } from 'obsidian';
 
-class comparaisonModal extends Modal {
+class ComparaisonModal extends Modal {
     onFilesSelected: (files: TFile[]) => void;
     files: TFile[];
     selectedFiles: Set<TFile>;
@@ -68,7 +68,7 @@ class comparaisonModal extends Modal {
 // Méthode pour ouvrir la fenêtre modale
 export function openComparaisonModal(app: App, files: TFile[]): Promise<TFile[]> {
     return new Promise<TFile[]>((resolve) => {
-        new comparaisonModal(app, files, (selectedFiles: TFile[]) => {
+        new ComparaisonModal(app, files, (selectedFiles: TFile[]) => {
             resolve(selectedFiles);
         }).open();
     });

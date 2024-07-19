@@ -55,7 +55,7 @@ export class ExampleView extends ItemView {
     container.empty();
     container.addClass("sortable-container");
 
-    let treeFileList = await this.parcoursProfondeur(this.app.vault.getRoot(), 0);
+    let treeFileList = await this.depthFirstSearch(this.app.vault.getRoot(), 0);
 
     for (const treeFile of treeFileList) {
       let type = treeFile.tfolder instanceof TFolder ? "folder" : "file";
@@ -120,6 +120,7 @@ export class ExampleView extends ItemView {
 
           if (type === "folder") {
             const folder = treeFile.tfolder as TFolder;
+            console.log("folder expand", folder_expand);
             if (this.isFolderInExpandList(folder.path)) {
               folder_expand.delete(folder.path);
             } else {
@@ -131,7 +132,7 @@ export class ExampleView extends ItemView {
       });
 
       if (type === "folder" && this.isFolderInExpandList(treeFile.tfolder.path)) {
-        const childrenList = await this.parcoursProfondeur(
+        const childrenList = await this.depthFirstSearch(
           treeFile.tfolder as TFolder,
           treeFile.depth + 1
         );
@@ -242,7 +243,7 @@ export class ExampleView extends ItemView {
   }
 
 
-async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<TreeFile[]> {
+async depthFirstSearch(parentFolder: TFolder, depth: number): Promise<TreeFile[]> {
     let result: TreeFile[] = [];
 
     // Fonction de comparaison personnalisée pour trier les noms de fichiers/dossiers
@@ -278,7 +279,7 @@ async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<TreeFile
         if (child instanceof TFolder) {
             result.push(new TreeFile(depth, child));
             if (this.isFolderInExpandList(child.path)) {
-                const nestedFiles = await this.parcoursProfondeur(child, depth + 1);
+                const nestedFiles = await this.depthFirstSearch(child, depth + 1);
                 result.push(...nestedFiles);
             }
         } else {
@@ -289,7 +290,7 @@ async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<TreeFile
     return result;
 }
   
-
+  //Function called when a file is moved using drag and drop
   async moveFile(source_path: string, target_path: string) {
     let source = this.app.vault.getAbstractFileByPath(source_path);
     let target = this.app.vault.getAbstractFileByPath(target_path);
@@ -327,6 +328,7 @@ async parcoursProfondeur(parentFolder: TFolder, depth: number): Promise<TreeFile
         
 
         // Réordonner les fichiers pour libérer la place pour le fichier source         
+        console.log("reorder files");
         await this.reorderFiles(target_parent_folder, source_file_last_number, target_file_last_number);
         // Renommer le fichier source au nouveau chemin
         let file_tempo = this.app.vault.getAbstractFileByPath(temporary_path)
@@ -475,14 +477,25 @@ async reorderFiles(parent_folder: TFolder, source_number: number, target_number:
 
   // Si le fichier source est déplacé vers l'avant dans la numérotation
   if (source_number > target_number) {
+      console.log("CAS 1 : source_number > target_number")
       children.reverse();
       for (const child of children) {
           let child_last_number = this.getLastNumber(child.name);
           if (child_last_number >= target_number && child_last_number < source_number) {
               let new_path = parent_folder.path + "/" + this.incrementLastNumber(child.name);
-              await this.app.fileManager.renameFile(child, new_path);
+              if (this.isFolderInExpandList(child.path)){
+                console.log("Child in expand list", child);
+                folder_expand.delete(child.path);
+                await this.app.fileManager.renameFile(child, new_path);
+                folder_expand.add(child.path);
+              }
+              else{
+                await this.app.fileManager.renameFile(child, new_path);
+              }
 
               // Child est un Folder
+              console.log("Child ", child);
+              console.log("folder expand", folder_expand)
               if (child instanceof TFolder) {
                   await renameFolderChildren(child, 0);
               }
@@ -491,6 +504,7 @@ async reorderFiles(parent_folder: TFolder, source_number: number, target_number:
   }
   // Si le fichier source est déplacé vers l'arrière dans la numérotation
   else {
+    console.log("CAS 2 : source_number < target_number")
     for (const child of children) {
       let child_last_number = this.getLastNumber(child.name);
       if (child_last_number <= target_number && child_last_number > source_number) {
@@ -498,6 +512,9 @@ async reorderFiles(parent_folder: TFolder, source_number: number, target_number:
         await this.app.fileManager.renameFile(child, new_path);
         // Child est un Folder
         if (child instanceof TFolder) {
+          if (this.isFolderInExpandList(child.path)){
+            console.log("Child in expand list", child);
+          }
             await renameFolderChildren(child, 0);
         }
       }

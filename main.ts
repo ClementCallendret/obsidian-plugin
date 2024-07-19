@@ -5,7 +5,7 @@ import { openTemplateModal } from './src/modal/templateModal';
 import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
-import { createFolders, getNextNumber, getIDFromFile ,getNumberFromTitle} from './src/utils/utils';
+import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber} from './src/utils/utils';
 import { createIssue, getRedmineIssues, getRedmineProject, updateIssue } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
@@ -45,7 +45,7 @@ export default class MyPlugin extends Plugin {
 			//get all id issue
 			let idIssueList = [];
 			for (const issue of issues) {
-				const idIssue = getNumberFromTitle(issue.subject);
+				const idIssue = getTitleNumber(issue.subject);
 				if (idIssue != null){
 					idIssueList.push(idIssue);
 				}
@@ -65,10 +65,6 @@ export default class MyPlugin extends Plugin {
 					console.error("Error no ID in the file");
 				}
 			})
-			//for all files selected
-			//if no issue created -> create a new one
-			//else : modify already created issue
-
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
@@ -137,7 +133,7 @@ export default class MyPlugin extends Plugin {
             // Le chargement initial est terminé
             this.initial_load = false;
 			this.start();
-			createFolders();
+			setupFolders();
 			this.activateView();
         });
  
@@ -173,28 +169,7 @@ export default class MyPlugin extends Plugin {
 			
 		}
 	}
-	/*
-	async create_folder() {
-		const activeFile = this.app.workspace.getActiveFile();
-		if (activeFile) {
-			const folderPath = activeFile.path.substring(0, activeFile.path.lastIndexOf('/'));
-			const parentFolder = activeFile.parent;
-			if (parentFolder != null){
-				const digits = await getNextNumber(parentFolder);
-				const newFolderPath = `${folderPath}/${digits} Fichier`;
-				await this.app.vault.createFolder(newFolderPath);
-				
-		
-				const newFilePath = `${newFolderPath}/${digits}.1 Titre.md`;
-				let id = this.getID()+1;
-				await this.app.vault.create(newFilePath, `---\nid: ${id}\n---`);
-				await this.setID(id);
-		
-				this.app.workspace.openLinkText(newFilePath, '', true);
-			}
-		}
-	}
-	*/
+	
 	async activateView() {
 		const { workspace } = this.app;
 	

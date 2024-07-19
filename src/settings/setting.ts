@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import MyPlugin from '../../main';
 
+//HTML preview | Markdown content 
 export interface Template {
     preview: string;
     content: string;
@@ -259,7 +260,7 @@ export class SampleSettingTab extends PluginSettingTab {
                     });
             });
         });
-
+        
         new Setting(containerEl)
             .setName('Add New Template')
             .addButton(button => {

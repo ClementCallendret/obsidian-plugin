@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting, TAbstractFile } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import { Template } from '../settings/setting';
 // Classe pour créer la fenêtre modale
 class TemplateModal extends Modal {

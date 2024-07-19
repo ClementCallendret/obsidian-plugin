@@ -1,11 +1,7 @@
-import { markdownDiff } from 'markdown-diff';
-import { requestUrl, RequestUrlParam, RequestUrlResponse, TFile } from 'obsidian';
-import { addNewlinesBeforeTables, removeDelImage, replaceHtmlTags } from 'src/hierarchy/hierarchy';
+import { requestUrl, RequestUrlParam, TFile } from 'obsidian';
 import {  formatDataObsidianToRedmine, getIDFromFile, splitMetadataAndContent } from 'src/utils/utils';
 
 const fs = require('fs');
-import { Redmine, RedmineTS } from 'redmine-ts';
-
 
 interface RedmineIssue {
     project_id: number;
@@ -17,21 +13,21 @@ interface RedmineIssue {
     assigned_to_id?: number;
 }
 
-export async function getRedmineProject(apiKey : string) {
+export async function getRedmineProject(apiKey: string) {
     const apiUrl = 'https://ticket.iocean.fr/projects.json';
 
     const headers = {
         "X-Redmine-API-Key": apiKey
-        }
-        
-    const response = await requestUrl({url: apiUrl, headers})
-    return response.json.projects;
+    };
 
+    const response = await requestUrl({ url: apiUrl, headers });
+    return response.json.projects;
 }
-//projet + tracker + statut
-export async function createIssue(apiKey : string, file : TFile, project_id : number){
+
+// Create a new issue in the specified project with the tracker and status
+export async function createIssue(apiKey: string, file: TFile, project_id: number) {
     const data = splitMetadataAndContent(await app.vault.read(file));
-    const title = await getIDFromFile(file) + " "+ file.basename;
+    const title = await getIDFromFile(file) + " " + file.basename;
     const requestParams: RequestUrlParam = {
         url: "https://ticket.iocean.fr/issues.json",
         method: "POST",
@@ -40,23 +36,23 @@ export async function createIssue(apiKey : string, file : TFile, project_id : nu
             "issue": {
                 "project_id": project_id,
                 "subject": title,
-                "description":formatDataObsidianToRedmine(data.content),
+                "description": formatDataObsidianToRedmine(data.content),
             }
         }),
         headers: {
             "X-Redmine-API-Key": apiKey
-            },
-        throw: false // Cette propriété est optionnelle et par défaut à true
+        },
+        throw: false 
     };
-    const response = await requestUrl(requestParams)
+    const response = await requestUrl(requestParams);
     return response.json;
 }
 
-//update une issue en changeant la description
-//POUR GARDER LE CONTENU ORIGINAL REMPLACER "description" PAR "notes" 
-export async function updateIssue(apiKey : string, file : TFile, issueId : number){
+// Update an issue by changing its description
+// TO KEEP THE ORIGINAL CONTENT, REPLACE "description" WITH "notes"
+export async function updateIssue(apiKey: string, file: TFile, issueId: number) {
     const data = splitMetadataAndContent(await app.vault.read(file));
-    const title = await getIDFromFile(file) + " "+ file.basename;
+    const title = await getIDFromFile(file) + " " + file.basename;
     const requestParams: RequestUrlParam = {
         url: `https://ticket.iocean.fr/issues/${issueId}.json`,
         method: "PUT",
@@ -69,22 +65,24 @@ export async function updateIssue(apiKey : string, file : TFile, issueId : numbe
         }),
         headers: {
             "X-Redmine-API-Key": apiKey
-            },
-        throw: false // Cette propriété est optionnelle et par défaut à true
+        },
+        throw: false // This property is optional and defaults to true
     };
-    const response = await requestUrl(requestParams)
+    const response = await requestUrl(requestParams);
 }
 
-export async function getRedmineIssues(apiKey : string, projectId : number) {
+// Get all issues for a specific project
+export async function getRedmineIssues(apiKey: string, projectId: number) {
     const apiUrl = `https://ticket.iocean.fr/issues.json?project_id=${projectId}`;
 
     const headers = {
         "X-Redmine-API-Key": apiKey
-        };
-        
-    const response = await requestUrl({url: apiUrl, headers});
+    };
+
+    const response = await requestUrl({ url: apiUrl, headers });
     return response.json.issues;
 }
+
 
 //comparaison entre les fichiers
 /*

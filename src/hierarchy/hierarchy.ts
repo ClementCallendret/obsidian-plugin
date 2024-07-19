@@ -1,11 +1,9 @@
 import * as Diff from 'diff';
 import { markdownDiff } from 'markdown-diff';
 
-import { Document, Packer, Paragraph, Tab, TextRun } from 'docx';
-import * as fs from 'fs';
-import {TFolder, Notice, TFile, WorkspaceLeaf, TAbstractFile} from 'obsidian';
-import {createFolders, getIDFromFile, getNextNumber } from '../utils/utils';
-import {FileModal, openFileModal} from '../modal/fileModal';
+//import { Document, Packer, Paragraph, Tab, TextRun } from 'docx';
+import {TFolder, Notice, TFile} from 'obsidian';
+import {setupFolders, getIDFromFile, getNextNumber } from '../utils/utils';
 import { openComparaisonModal } from 'src/modal/comparaisonModal';
 
 //Comparer les données des fichiers 
@@ -101,9 +99,9 @@ Un parfum de café flottait dans la brise nocturne.`);
 //Comparer les fichiers
 export async function comparaison(){
     //Création des dossiers
-    await createFolders();
+    await setupFolders();
+
     //creation du fichier de référence et de sa version pour la comparaison
-   
     await concatenateAllNotes();
     
     let savesFiles = getSavesFiles();
@@ -111,12 +109,12 @@ export async function comparaison(){
     if (savesFiles != undefined && savesFiles.length >= 2){
         savesFiles = orderFile(savesFiles);
         let LastAndPrevious = await openComparaisonModal(app,savesFiles)
+
         //On lit les fichiers
         let last_file_data = await app.vault.read(LastAndPrevious[0] as TFile);
         let previous_file_data = await app.vault.read(LastAndPrevious[1] as TFile);
     
         //On compare les fichiers
-
         let final_data = compareFilesData(previous_file_data, last_file_data);
         
         //On crée le fichier final
@@ -125,6 +123,7 @@ export async function comparaison(){
         if (parent_folder != null) {
             digits = +await getNextNumber(parent_folder);
         }
+        
         
         await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
         await app.workspace.openLinkText(``,`Finals/${digits - 1} Final.md`, true);
@@ -146,7 +145,7 @@ export async function comparaison(){
     }
 }
 
-
+//To compare the data from the file
 export function compareFilesData(file1 : string, file2 : string): string{
     //init res
     let texteFinal = '';
@@ -164,7 +163,6 @@ export function compareFilesData(file1 : string, file2 : string): string{
             let part2 = extractFileContent(file2, id2.toString());
             //On compare les deux parties
             if (part1 != null && part2 != null){
-                //texteFinal += compareString(part1, part2);
                 texteFinal += markdownDiff(part1, part2);
             }
         }
@@ -184,6 +182,7 @@ export function compareFilesData(file1 : string, file2 : string): string{
     return texteFinal;
 }
 
+//concatenate all notes in folder "Projet"
 export async function concatenateAllNotes() {
     const vault = this.app.vault;
     const files = vault.getMarkdownFiles().reverse();
@@ -233,14 +232,17 @@ export function getNumber(fileTitle: string): string {
     return numberPart;
   }
 
+//Markdown diff compare lines by lines
+//add a new lines with patterns
 function addNewline(input: string): string {
     return input.replace(/\./g, '.\n@@@a');
 }
+//delete patterns created by addNewLine
 function deleteNewLine(input: string): string {
     return input.replace(/\n@@@a/g, '');
 }
 
-//get list of numbers from a file content
+//get list of numbers from a saves content
 function extractNumbers(input: string): number[] {
     const parts = input.split('\n');
     if (parts.length < 2 || parts[1] !== '@@@@@@@@@@') {
@@ -273,56 +275,11 @@ function extractFileContent(data: string, fileId: string): string | null {
             }
         }
     }
-
     // If the file ID was not found, return null
     return null;
 }
 
-// get the last and previous file
-/*
-function getLastAndPreviousFile() {
-    let reference: TFolder | null = null;
-    const root = app.vault.getRoot();
-    
-    // On récupère le chemin du dossier Saves
-    for (const child of root.children) {
-        if (child instanceof TFolder && child.name === 'Saves') {
-            reference = child;
-            break;
-        }
-    }
-
-    // On récupère les deux derniers fichiers
-    let last_file: TFile | null = null;
-    let previous_file: TFile | null = null;
-    
-    if (reference !== null) {
-        let last_number = -Infinity;
-        let previous_number = -Infinity;
-
-        for (const child of reference.children) {
-            if (child instanceof TFile) {
-                const number = Number(getNumber(child.name));
-
-                if (number > last_number) {
-                    previous_number = last_number;
-                    previous_file = last_file;
-                    last_number = number;
-                    last_file = child;
-                } else if (number > previous_number) {
-                    previous_number = number;
-                    previous_file = child;
-                }
-            }
-        }
-    } else {
-        new Notice('Dossier Saves introuvable');
-        return null;
-    }
-    return { lastfile: last_file, previousfile: previous_file };
-}
-*/
-
+//add new lines before tables for Obsidian Markdown
 export function addNewlinesBeforeTables(markdown: string): string {
     const lines = markdown.split(/\r?\n/);
     const result = [];
@@ -341,11 +298,13 @@ export function addNewlinesBeforeTables(markdown: string): string {
     return result.join('\n');
 }
 
+//remove <del> </del> around image
 export function removeDelImage(str: string): string {
     // Utilise une expression régulière pour trouver et supprimer les éléments encadrés par <del>...</del>
     return str.replace(/<del>!\[\[.*?\]\]<\/del>/g, '');
 }
 
+//replace html tags from Markdown diff
 export function replaceHtmlTags(input: string): string {
     return input
         .replace(/<del>/g, '<del>***')
@@ -355,6 +314,8 @@ export function replaceHtmlTags(input: string): string {
         .replace(/(\*\*\*\*\*\*)/g, '');
 }
 
+
+//get all files from the "Saves" files
 function getSavesFiles() : TFile[] | undefined {
     let savesFolder: TFolder | null = null;
     const root = app.vault.getRoot();
@@ -369,6 +330,9 @@ function getSavesFiles() : TFile[] | undefined {
     return savesFolder?.children as TFile[];
 }
 
+//order all files
+//NOTE : most of the time it's useless, obsidian do it for us. 
+//      But if you restart the app and request file, markdown give files with random sort
 function orderFile(fileList :TFile []): TFile[] {
     let filesOrdered : TFile[] = new Array(fileList.length);
     for (const file of fileList){
