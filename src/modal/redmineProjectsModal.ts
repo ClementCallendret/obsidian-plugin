@@ -38,7 +38,7 @@ export class RedmineProjectsModal extends Modal {
         this.projects.forEach((project) => {
             const projectCard = gridContainer.createEl('div', { cls: 'file-card' });
             const titleEl = projectCard.createEl('h3', { text: project.name });
-            titleEl.addClass('center-text'); // Ajouter la classe pour centrer le texte
+            titleEl.addClass('center-text'); 
 
             projectCard.style.backgroundColor = '#272A33';
 
@@ -48,12 +48,12 @@ export class RedmineProjectsModal extends Modal {
             });
 
             projectCard.addEventListener('mouseover', () => {
-                projectCard.style.backgroundColor = '#4CAF50'; // Couleur verte au survol
+                projectCard.style.backgroundColor = '#4CAF50'; 
                 projectCard.style.cursor = 'pointer';
             });
 
             projectCard.addEventListener('mouseout', () => {
-                projectCard.style.backgroundColor = '#272A33'; // Couleur d'origine quand le curseur quitte la carte
+                projectCard.style.backgroundColor = '#272A33'; 
             });
         });
     }
@@ -64,7 +64,6 @@ export class RedmineProjectsModal extends Modal {
     }
 }
 
-// Méthode pour ouvrir la fenêtre modale
 export function openRedmineProjectsModal(app: App, projects: Project[]): Promise<Project> {
     return new Promise<Project>((resolve) => {
         new RedmineProjectsModal(app, projects, (selectedProject: Project) => {

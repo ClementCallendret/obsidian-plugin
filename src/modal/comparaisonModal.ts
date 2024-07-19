@@ -20,7 +20,7 @@ class ComparaisonModal extends Modal {
         const titleEl = contentEl.createEl('h2', { text: 'Sélectionner les fichiers à comparer' });
         titleEl.addClass('center-text');
 
-        // Ajouter un bouton pour valider la sélection
+
         const validateButton = contentEl.createEl('button', { text: 'Valider la sélection' });
         validateButton.addClass('validate-button');
         validateButton.addEventListener('click', () => {
@@ -35,9 +35,8 @@ class ComparaisonModal extends Modal {
             const fileCard = gridContainer.createEl('div', { cls: 'file-card' });
             const title = file.basename;
             const titleEl = fileCard.createEl('h3', { text: title });
-            titleEl.addClass('center-text'); // Ajouter la classe pour centrer le texte
+            titleEl.addClass('center-text'); 
 
-            // Initialiser les files à la couleur #272A33
             fileCard.style.backgroundColor = '#272A33';
 
             fileCard.addEventListener('click', () => {
@@ -65,7 +64,6 @@ class ComparaisonModal extends Modal {
     }
 }
 
-// Méthode pour ouvrir la fenêtre modale
 export function openComparaisonModal(app: App, files: TFile[]): Promise<TFile[]> {
     return new Promise<TFile[]>((resolve) => {
         new ComparaisonModal(app, files, (selectedFiles: TFile[]) => {

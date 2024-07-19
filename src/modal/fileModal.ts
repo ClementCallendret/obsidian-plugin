@@ -20,7 +20,6 @@ export class FileModal extends Modal {
         const titleEl = contentEl.createEl('h2', { text: 'Sélectionner les fichiers à synchroniser' });
         titleEl.addClass('center-text');
 
-        // Ajouter un bouton pour valider la sélection
         const validateButton = contentEl.createEl('button', { text: 'Valider la sélection' });
         validateButton.addClass('validate-button');
         validateButton.addEventListener('click', () => {
@@ -35,9 +34,8 @@ export class FileModal extends Modal {
             const fileCard = gridContainer.createEl('div', { cls: 'file-card' });
             const title = file.basename;
             const titleEl = fileCard.createEl('h3', { text: title });
-            titleEl.addClass('center-text'); // Ajouter la classe pour centrer le texte
+            titleEl.addClass('center-text'); 
 
-            // Initialiser les files à la couleur #272A33
             fileCard.style.backgroundColor = '#272A33';
 
             fileCard.addEventListener('click', () => {
@@ -58,7 +56,6 @@ export class FileModal extends Modal {
     }
 }
 
-// Méthode pour ouvrir la fenêtre modale
 export function openFileModal(app: App, files: TFile[]): Promise<TFile[]> {
     return new Promise<TFile[]>((resolve) => {
         new FileModal(app, files, (selectedFiles: TFile[]) => {

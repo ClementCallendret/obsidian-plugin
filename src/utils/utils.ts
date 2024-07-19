@@ -174,58 +174,54 @@ export function getTitleWithoutNumber(title: string): string {
 
 //increment last number of a title
 export function incrementLastNumber(title: string): string {
-    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex to capture the last number
+    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; 
     const match = title.match(regex);
 
     if (!match) {
-        // No number found at the end, return the input as is
         return title;
     }
 
-    const numPart = match[1]; // Part containing the number
-    const restPart = match[3] ?? ""; // Remaining part after the number, if present
+    const numPart = match[1]; 
+    const restPart = match[3] ?? ""; 
 
-    const numParts = numPart.split('.'); // Split number parts by dots
-    const lastNum = parseInt(numParts.pop()!); // Extract and convert the last number to integer
+    const numParts = numPart.split('.'); 
+    const lastNum = parseInt(numParts.pop()!); 
 
     if (isNaN(lastNum)) {
-        // If the last number is not a valid number, return the input as is
         return title;
     }
 
-    const incrementedNum = lastNum + 1; // Increment the last number
+    const incrementedNum = lastNum + 1; 
 
-    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); // Reconstruct the number part
+    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); 
 
-    // Reconstruct the string with the incremented number and the rest of the string
     let res = newNumPart + restPart;
     return res.replace(/^\.+/, '');
 }
 
 //decrement last number of a title
 export function decrementLastNumber(title: string): string {
-    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; // Regex to capture the last number
+    const regex = /(\d+(\.\d+)*)(\s+.*)?$/; 
     const match = title.match(regex);
 
     if (!match) {
-        // No number found at the end, return the input as is
         return title;
     }
 
-    const numPart = match[1]; // Part containing the number
-    const restPart = match[3] ?? ""; // Remaining part after the number, if present
+    const numPart = match[1]; 
+    const restPart = match[3] ?? ""; 
 
-    const numParts = numPart.split('.'); // Split number parts by dots
-    const lastNum = parseInt(numParts.pop()!); // Extract and convert the last number to integer
+    const numParts = numPart.split('.'); 
+    const lastNum = parseInt(numParts.pop()!); 
 
     if (isNaN(lastNum)) {
         // If the last number is not a valid number, return the input as is
         return title;
     }
 
-    const incrementedNum = lastNum - 1; // Decrement the last number
+    const incrementedNum = lastNum - 1; 
 
-    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); // Reconstruct the number part
+    const newNumPart = numParts.join('.') + '.' + incrementedNum.toString(); 
 
     // Reconstruct the string with the incremented number and the rest of the string
     let res = newNumPart + restPart;

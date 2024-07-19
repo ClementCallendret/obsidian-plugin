@@ -108,19 +108,19 @@ export default class MyPlugin extends Plugin {
         this.registerEvent(
             this.app.vault.on('create', async (file: TAbstractFile) => {
                 if (!this.initial_load) {
-					this.updateExampleView();
+					await this.updateExampleView();
                 }
             })
         );
 		this.registerEvent(
             this.app.vault.on('delete', async (file: TAbstractFile) => {
-				this.updateExampleView();
+				await this.updateExampleView();
             })
         );
 
         this.registerEvent(
             this.app.vault.on('rename', async (file: TAbstractFile) => {
-                this.updateExampleView();
+                await this.updateExampleView();
             })
         );
 
@@ -197,8 +197,9 @@ export default class MyPlugin extends Plugin {
 	async updateExampleView() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
         if (leaves.length > 0) {
+			console.log("leaves", leaves);
             const view = leaves[0].view as ExampleView;
-            view.updateFileList();
+            await view.updateFileList();
         }
     }
 	async loadSettings() {
