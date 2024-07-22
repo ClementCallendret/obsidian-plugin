@@ -299,3 +299,20 @@ export function formatDataObsidianToRedmine(data: string): string {
     data = removeSecondLineFromAllTables(data);
     return data;
 }
+
+export async function start(){
+    let vault = app.vault;
+    const root_folder_children = vault.getRoot().children;
+    let project_folder_created = false;
+    if (root_folder_children != null){
+        for (const children of root_folder_children) {
+            if (children.name == "Projet") {
+                project_folder_created = true;
+                break;
+            }
+        }
+    }
+    if(!project_folder_created){
+        await vault.createFolder("Projet");
+    }
+}

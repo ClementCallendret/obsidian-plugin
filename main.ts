@@ -5,7 +5,7 @@ import { openTemplateModal } from './src/modal/templateModal';
 import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
-import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber} from './src/utils/utils';
+import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber, start} from './src/utils/utils';
 import { createIssue, getRedmineIssues, getRedmineProject, updateIssue } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
@@ -50,16 +50,17 @@ export default class MyPlugin extends Plugin {
 					idIssueList.push(idIssue);
 				}
 			}
-
+			console.log("Files selected", filesSelected);
 			filesSelected.forEach(async file => {
 				const fileId = await getIDFromFile(file);
 				//file id not in idIssueList -> create a new issu
 				if (fileId != null && !idIssueList.includes(fileId)){
-					createIssue(apiKey, file, project.id);
+					console.log("Create Issue");
+					await createIssue(apiKey, file, project.id);
 				}
 				//file in idIssueList -> modify already created issue
 				else if (fileId != null){
-					updateIssue(apiKey, file, issues[idIssueList.indexOf(fileId)].id);
+					await updateIssue(apiKey, file, issues[idIssueList.indexOf(fileId)].id);
 				}
 				else{
 					console.error("Error no ID in the file");
@@ -132,7 +133,7 @@ export default class MyPlugin extends Plugin {
         this.app.workspace.onLayoutReady(() => {
             // Le chargement initial est terminé
             this.initial_load = false;
-			this.start();
+			start();
 			setupFolders();
 			this.activateView();
         });
@@ -197,7 +198,6 @@ export default class MyPlugin extends Plugin {
 	async updateExampleView() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
         if (leaves.length > 0) {
-			console.log("leaves", leaves);
             const view = leaves[0].view as ExampleView;
             await view.updateFileList();
         }
@@ -208,23 +208,6 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	async start(){
-		let vault = this.app.vault;
-		const root_folder_children = vault.getRoot().children;
-		let project_folder_created = false;
-		if (root_folder_children != null){
-			for (const children of root_folder_children) {
-				if (children.name == "Projet") {
-					project_folder_created = true;
-					break;
-				}
-			}
-		}
-		if(!project_folder_created){
-			await vault.createFolder("Projet");
-		}
 	}
 }
 

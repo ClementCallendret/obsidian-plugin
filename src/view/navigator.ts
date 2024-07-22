@@ -57,7 +57,6 @@ export class ExampleView extends ItemView {
     container.addClass("sortable-container");
 
     let treeFileList = await this.depthFirstSearch(this.app.vault.getRoot(), 0);
-    console.log("treeFileList", treeFileList);
     for (const treeFile of treeFileList) {
       let type = treeFile.tfolder instanceof TFolder ? "folder" : "file";
       let margin = -50 + treeFile.depth * 10;
@@ -266,8 +265,7 @@ async depthFirstSearch(parentFolder : TFolder, depth: number): Promise<TreeFile[
     };
     const parentFolderClone = {...parentFolder};
     const sortedChildren = parentFolderClone.children.sort((a, b) => compareNames(a.name, b.name));
-    console.log("parent Folder", parentFolderClone);
-    console.log("sorted children", sortedChildren);
+
     for (let child of sortedChildren) {
         if (child instanceof TFolder) {
             result.push(new TreeFile(depth, child));
