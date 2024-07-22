@@ -1,3 +1,4 @@
+import { stat } from 'fs';
 import { requestUrl, RequestUrlParam, TFile } from 'obsidian';
 import {  formatDataObsidianToRedmine, getIDFromFile, splitMetadataAndContent } from 'src/utils/utils';
 
@@ -26,25 +27,29 @@ export async function getRedmineProject(apiKey: string) {
 
 // Create a new issue in the specified project with the tracker and status
 export async function createIssue(apiKey: string, file: TFile, project_id: number) {
-    const data = splitMetadataAndContent(await app.vault.read(file));
-    const title = await getIDFromFile(file) + " " + file.basename;
-    const requestParams: RequestUrlParam = {
-        url: "https://ticket.iocean.fr/issues.json",
-        method: "POST",
-        contentType: "application/json",
-        body: JSON.stringify({
-            "issue": {
-                "project_id": project_id,
-                "subject": title,
-                "description": formatDataObsidianToRedmine(data.content),
-            }
-        }),
-        headers: {
-            "X-Redmine-API-Key": apiKey
-        },
-        throw: false 
-    };
-    const response = await requestUrl(requestParams);
+    // There is a bug with Redmine, sometimes we get "Internal Error"
+    let response = {status: 500, json : {}};
+    while(response.status != 201) {
+        const data = splitMetadataAndContent(await app.vault.read(file));
+        const title = await getIDFromFile(file) + " " + file.basename;
+        const requestParams: RequestUrlParam = {
+            url: "https://ticket.iocean.fr/issues.json",
+            method: "POST",
+            contentType: "application/json",
+            body: JSON.stringify({
+                "issue": {
+                    "project_id": project_id,
+                    "subject": title,
+                    "description": formatDataObsidianToRedmine(data.content),
+                }
+            }),
+            headers: {
+                "X-Redmine-API-Key": apiKey
+            },
+            throw: false 
+        };
+        response = await requestUrl(requestParams);
+    }
     return response.json;
 }
 
@@ -69,6 +74,7 @@ export async function updateIssue(apiKey: string, file: TFile, issueId: number) 
         throw: false // This property is optional and defaults to true
     };
     const response = await requestUrl(requestParams);
+    console.log("response", response);
 }
 
 // Get all issues for a specific project
