@@ -50,7 +50,6 @@ export default class MyPlugin extends Plugin {
 					idIssueList.push(idIssue);
 				}
 			}
-			console.log("Files selected", filesSelected);
 			filesSelected.forEach(async file => {
 				const fileId = await getIDFromFile(file);
 				//file id not in idIssueList -> create a new issu

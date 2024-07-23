@@ -74,7 +74,6 @@ export async function updateIssue(apiKey: string, file: TFile, issueId: number) 
         throw: false // This property is optional and defaults to true
     };
     const response = await requestUrl(requestParams);
-    console.log("response", response);
 }
 
 // Get all issues for a specific project
