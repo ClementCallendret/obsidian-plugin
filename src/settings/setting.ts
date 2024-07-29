@@ -196,8 +196,9 @@ export class SampleSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
+        //Redmine API
+        containerEl.createEl('h2', { text: 'Redmine API' });
         //Redmine API Url
-        containerEl.createEl('h2', { text: 'Redmine API Url' });
         new Setting(containerEl)
             .setName('API Url')
             .addTextArea(text => text
@@ -209,7 +210,6 @@ export class SampleSettingTab extends PluginSettingTab {
             );
 
         // Redmine API Key
-        containerEl.createEl('h2', { text: 'Redmine API Key' });
         new Setting(containerEl)
             .setName('API Key')
             .addTextArea(text => text

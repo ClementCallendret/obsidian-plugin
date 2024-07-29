@@ -223,7 +223,8 @@ export function replaceHtmlTags(input: string): string {
         .replace(/<ins>/g, ' ***')
         .replace(/<\/ins>/g, '***')
         .replace(/(\*\*\*\*\*\*)/g, '')
-        .replace(/(\*\*\*    \*\*\*)/g, '    ');
+        .replace(/(\*\*\*    \*\*\*)/g, '    ')
+        .replace(/&#39;/g, '\'');
 }
 
 

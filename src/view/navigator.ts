@@ -209,7 +209,7 @@ export class ExampleView extends ItemView {
           const targetFile = this.app.vault.getAbstractFileByPath(targetPath);
           
           if (sourceFile != null && targetFile != null && getLastNumber(sourceFile.name) != 0 && getLastNumber(targetFile.name) != 0){
-            this.moveFile(sourcePath, targetPath);
+            await this.moveFile(sourcePath, targetPath);
         }
         else{
           console.error("tentative de déplacement de notes")
@@ -425,6 +425,7 @@ const children = [... parent_folder.children ];
                     if (newName) {
                         const newFilePath = `${file.parent?.path}/${newName}`;
                         await app.vault.rename(file, newFilePath);
+                        await this.updateFileList();
                         new Notice(`Renamed to ${newName}`);
                     }
                 }
@@ -444,6 +445,7 @@ const children = [... parent_folder.children ];
                   if (isMarkdown) {
                       await renameFolderChildren(file_parent as TFolder, -(getLastNumber(file_name)));
                   }
+                  await this.updateFileList();
                   new Notice(`Deleted ${file.name}`);
               }
           });
@@ -479,6 +481,7 @@ const children = [... parent_folder.children ];
               const metadata = `---\nid: ${id}\n---\n`;		
               await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
               this.MyPlugin.setID(id);
+              await this.updateFileList();
             }
         });
       });
@@ -494,8 +497,8 @@ const children = [... parent_folder.children ];
                         const newFolderPath = `${folder.parent?.path}/${newName}`;
                         folder_expand.delete(folder);
                         await app.vault.rename(folder, newFolderPath);
+                        await this.updateFileList();
                         new Notice(`Renamed to ${newName}`);
-                        this.updateFileList();
                     }
                 }
             });

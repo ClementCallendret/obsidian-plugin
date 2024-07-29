@@ -37,8 +37,8 @@ export default class MyPlugin extends Plugin {
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		//const statusBarItemEl = this.addStatusBarItem();
+		//statusBarItemEl.setText('Status Bar Text');
 
 		//Choose a template and create a file 
 		this.addCommand({
@@ -80,7 +80,7 @@ export default class MyPlugin extends Plugin {
 			},		})
 		*/
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		//this.addSettingTab(new SampleSettingTab(this.app, this));
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		//this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
@@ -94,13 +94,13 @@ export default class MyPlugin extends Plugin {
         );
 		this.registerEvent(
             this.app.vault.on('delete', async (file: TAbstractFile) => {
-				await this.updateExampleView();
+				//await this.updateExampleView();
             })
         );
 
         this.registerEvent(
             this.app.vault.on('rename', async (file: TAbstractFile) => {
-                await this.updateExampleView();
+                //await this.updateExampleView();
             })
         );
 
@@ -115,6 +115,7 @@ export default class MyPlugin extends Plugin {
 			start();
 			setupFolders();
 			this.activateView();
+			console.log("Load Fileflow plugin");
         });
  
 	}
