@@ -104,7 +104,6 @@ export class ExampleView extends ItemView {
       listItem.addEventListener("click", async () => {
         const filePath = listItem.getAttribute("data-path");
         const type = listItem.getAttribute("data-type");
-
         if (filePath) {
           if (type === "file") {
             const file_open = fileAlreadyOpen(filePath);

@@ -1,6 +1,8 @@
 import { stat } from 'fs';
-import { requestUrl, RequestUrlParam, TFile } from 'obsidian';
-import {  formatDataObsidianToRedmine, getIDFromFile, splitMetadataAndContent } from 'src/utils/utils';
+import { Notice, requestUrl, RequestUrlParam, TFile } from 'obsidian';
+import { openFileModal } from 'src/modal/fileModal';
+import { openRedmineProjectsModal } from 'src/modal/redmineProjectsModal';
+import {  formatDataObsidianToRedmine, getIDFromFile, getTitleNumber, orderNoteFiles, splitMetadataAndContent } from 'src/utils/utils';
 
 const fs = require('fs');
 
@@ -56,6 +58,9 @@ export async function createIssue(apiKey: string, file: TFile, project_id: numbe
 // Update an issue by changing its description
 // TO KEEP THE ORIGINAL CONTENT, REPLACE "description" WITH "notes"
 export async function updateIssue(apiKey: string, file: TFile, issueId: number) {
+    // There is a bug with Redmine, sometimes we get "Internal Error"
+    let response = {status: 500, json : {}};
+    while (response.status != 204) {
     const data = splitMetadataAndContent(await app.vault.read(file));
     const title = await getIDFromFile(file) + " " + file.basename;
     const requestParams: RequestUrlParam = {
@@ -73,7 +78,8 @@ export async function updateIssue(apiKey: string, file: TFile, issueId: number) 
         },
         throw: false // This property is optional and defaults to true
     };
-    const response = await requestUrl(requestParams);
+    response = await requestUrl(requestParams);
+    }
 }
 
 // Get all issues for a specific project
@@ -88,6 +94,41 @@ export async function getRedmineIssues(apiKey: string, projectId: number) {
     return response.json.issues;
 }
 
+export async function redmineSync(apiKey: string) {
+			//get all projects from redmine
+			let projects = await getRedmineProject(apiKey);
+			//select a project
+			let project = await openRedmineProjectsModal(app, projects);
+			//get all issues from the selected project
+			let issues = await getRedmineIssues(apiKey, project.id);
+			//select files to be uploaded
+			let allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
+            allFiles = await orderNoteFiles(allFiles);
+			let filesSelected = await openFileModal(app,allFiles);
+
+			//get all id issue
+			let idIssueList = [];
+			for (const issue of issues) {
+				const idIssue = getTitleNumber(issue.subject);
+				if (idIssue != null){
+					idIssueList.push(idIssue);
+				}
+			}
+			filesSelected.forEach(async file => {
+				const fileId = await getIDFromFile(file);
+				//file id not in idIssueList -> create a new issu
+				if (fileId != null && !idIssueList.includes(fileId)){
+					await createIssue(apiKey, file, project.id);
+				}
+				//file in idIssueList -> modify already created issue
+				else if (fileId != null){
+					await updateIssue(apiKey, file, issues[idIssueList.indexOf(fileId)].id);
+				}
+				else{
+					console.error("Error no ID in the file");
+				}
+			});
+}
 
 //comparaison entre les fichiers
 /*

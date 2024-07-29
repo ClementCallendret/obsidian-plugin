@@ -3,98 +3,9 @@ import { markdownDiff } from 'markdown-diff';
 
 //import { Document, Packer, Paragraph, Tab, TextRun } from 'docx';
 import {TFolder, Notice, TFile} from 'obsidian';
-import {setupFolders, getIDFromFile, getNextNumber } from '../utils/utils';
+import {setupFolders, getIDFromFile, getNextNumber, orderSaveFiles } from '../utils/utils';
 import { openComparaisonModal } from 'src/modal/comparaisonModal';
 
-//Comparer les données des fichiers 
-//Si une phrase a été changée, on marque l'entiereté de la phrase
-export async function compareString(oldContent: string, newContent: string) {
-    try {
-        //TODO Créer des phrases différentes à l'aide des points puis
-        //Utiliser la fonction diffLines sur chaque phrase
-
-        //const diff = Diff.diffWords(oldContent, newContent);
-        let oldContent = (`La ville était calme sous le ciel étoilé.
-Les lumières scintillaient doucement dans la nuit.
-Un chat noir traversa la rue déserte.
-Le vent soufflait légèrement à travers les arbres.
-Des voitures passaient sporadiquement au loin.
-Une brise fraîche apportait une douceur à l'air.
-Les étoiles brillaient intensément dans l'obscurité.
-Les rues pavées semblaient silencieuses et vides.
-Une enseigne clignotait au coin de la rue.
-Un parfum de fleurs flottait dans l'air.`);
-        let newContent = (`La ville était calme sous le ciel étoilé.
-Les lumières scintillaient doucement dans la nuit.
-Un chat noir traversa la rue déserte.
-Le vent soufflait légèrement à travers les arbres.
-Des voitures passaient sporadiquement au loin.
-Une brise fraîche apportait une douceur à l'air.
-Les étoiles brillaient intensément dans l'obscurité.
-Les rues pavées semblaient anciennes et mystérieuses.
-Un vieux piano résonnait depuis un bar voisin.
-Un parfum de café flottait dans la brise nocturne.`);
-
-        oldContent = addNewline(oldContent);
-        newContent = addNewline(newContent);    
-
-        const diff = Diff.diffLines(oldContent, newContent);
-        let textRuns: TextRun[] = [];    
-        diff.forEach((part) => {
-            if (part.added) {
-                textRuns.push(new TextRun({
-                    text: deleteNewLine("\n" + part.value),
-                    highlight: "FFFF00",
-                    bold: true
-                }));
-            } else if (part.removed) {
-                textRuns.push(new TextRun({
-                    text: deleteNewLine("\n" + part.value),
-                    strike: true,
-                    color: "FF0000"
-                }));
-            } else {
-                textRuns.push(new TextRun({
-                    text: deleteNewLine("\n" + part.value)
-                }));
-            }
-        });
-        /*
-        let paragraph = new Paragraph({
-            children: textRuns
-        });
-        let doc = new Document({
-            sections: [{
-                children: [paragraph]
-            }]
-        });
-
-
-
-        const referenceFolderPath = app.vault.getAbstractFileByPath('Références')?.path;
-        let absolutePath = '';
-        console.log('Chemin du dossier "reference":', referenceFolderPath);
-        if (referenceFolderPath) {
-            // Récupérer l'adaptateur FileSystem pour obtenir le chemin absolu dans le système de fichiers local
-            const fsAdapter = app.vault.adapter as FileSystemAdapter;
-            absolutePath = fsAdapter.getFullPath(referenceFolderPath);
-            
-            console.log('Chemin absolu du dossier "reference":', absolutePath);
-        } else {
-            console.error('Le dossier "reference" n\'existe pas.');
-        }
-
-        // Générer le document Word
-        const buffer = await Packer.toBuffer(doc);
-        fs.writeFileSync(absolutePath + "/DocWordddd.docx", buffer);
-        new Notice(`Document Word généré : ${absolutePath}`);
-         */
-    } catch (error) {
-        console.error('Erreur lors de la génération du document Word :', error);
-        new Notice('Erreur lors de la génération du document Word. Vérifiez la console pour plus de détails.');
-    }
-       
-}
 
 //Comparer les fichiers
 export async function comparaison(){
@@ -107,7 +18,7 @@ export async function comparaison(){
     let savesFiles = getSavesFiles();
     //Comparaison possible
     if (savesFiles != undefined && savesFiles.length >= 2){
-        savesFiles = orderFile(savesFiles);
+        savesFiles = orderSaveFiles(savesFiles);
         let LastAndPrevious = await openComparaisonModal(app,savesFiles)
 
         //On lit les fichiers
@@ -125,8 +36,8 @@ export async function comparaison(){
         }
         
         
-        await app.vault.create(`Finals/${digits - 1} Final.md`, final_data);
-        await app.workspace.openLinkText(``,`Finals/${digits - 1} Final.md`, true);
+        await app.vault.create(`Comparaison/${digits - 1} Comparaison.md`, final_data);
+        await app.workspace.openLinkText(``,`Comparaison/${digits - 1} Comparaison.md`, true);
     
         //ouvrir en mode view
         const leaf = this.app.workspace.activeLeaf;
@@ -192,7 +103,7 @@ export async function concatenateAllNotes() {
     let id_list  = [];
 
     for (const file of files){
-        if (!file.path.startsWith('Références') && !file.path.startsWith('Saves') && !file.path.startsWith('Finals')) {
+        if (!file.path.startsWith('Références') && !file.path.startsWith('Saves') && !file.path.startsWith('Comparaison')) {
             let data = await vault.read(file);
             let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
             let data_wt_meta = match ? match[1] : null;
@@ -311,7 +222,8 @@ export function replaceHtmlTags(input: string): string {
         .replace(/<\/del>/g, '***</del> ')
         .replace(/<ins>/g, ' ***')
         .replace(/<\/ins>/g, '***')
-        .replace(/(\*\*\*\*\*\*)/g, '');
+        .replace(/(\*\*\*\*\*\*)/g, '')
+        .replace(/(\*\*\*    \*\*\*)/g, '    ');
 }
 
 
@@ -330,14 +242,3 @@ function getSavesFiles() : TFile[] | undefined {
     return savesFolder?.children as TFile[];
 }
 
-//order all files
-//NOTE : most of the time it's useless, obsidian do it for us. 
-//      But if you restart the app and request file, markdown give files with random sort
-function orderFile(fileList :TFile []): TFile[] {
-    let filesOrdered : TFile[] = new Array(fileList.length);
-    for (const file of fileList){
-        let num : number = Number(getNumber(file.basename));
-        filesOrdered[num-1] = file;
-    }
-    return filesOrdered;
-}

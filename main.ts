@@ -6,7 +6,7 @@ import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
 import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber, start} from './src/utils/utils';
-import { createIssue, getRedmineIssues, getRedmineProject, updateIssue } from 'src/redmine/redmine';
+import { redmineSync } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 
 export default class MyPlugin extends Plugin {
@@ -17,54 +17,23 @@ export default class MyPlugin extends Plugin {
         await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
-			comparaison();
-			new Notice('Fichier de référence créé !');
-		});
+
 		
 		this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
 			const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 			this.createFile(templateNumber,parentFolder);
+			new Notice('Fichier créé !');
 		});
 		
+		this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
+			comparaison();
+			new Notice('Fichier de référence créé !');
+		});
 
-		this.addRibbonIcon('folder-sync', 'Redmine', async (evt: MouseEvent) => {
-			const apiKey = this.settings.apiKey;
-			//get all projects from redmine
-			let projects = await getRedmineProject(apiKey);
-			//select a project
-			let project = await openRedmineProjectsModal(app, projects);
-			//get all issues from the selected project
-			let issues = await getRedmineIssues(apiKey, project.id);
-			//select files to be uploaded
-			const allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
-			let filesSelected = await openFileModal(app,allFiles);
+		this.addRibbonIcon('folder-sync', 'Synchronisation Redmine', async (evt: MouseEvent) => {
+			await redmineSync(this.settings.apiKey);
 			new Notice('Redmine Sync Done !');
-
-			//get all id issue
-			let idIssueList = [];
-			for (const issue of issues) {
-				const idIssue = getTitleNumber(issue.subject);
-				if (idIssue != null){
-					idIssueList.push(idIssue);
-				}
-			}
-			filesSelected.forEach(async file => {
-				const fileId = await getIDFromFile(file);
-				//file id not in idIssueList -> create a new issu
-				if (fileId != null && !idIssueList.includes(fileId)){
-					console.log("Create Issue");
-					await createIssue(apiKey, file, project.id);
-				}
-				//file in idIssueList -> modify already created issue
-				else if (fileId != null){
-					await updateIssue(apiKey, file, issues[idIssueList.indexOf(fileId)].id);
-				}
-				else{
-					console.error("Error no ID in the file");
-				}
-			})
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
@@ -73,19 +42,20 @@ export default class MyPlugin extends Plugin {
 
 		//Choose a template and create a file 
 		this.addCommand({
-			id: 'template-selection',
-			name: 'Template Selection',
+			id: 'creer-un-nouveau-fichier',
+			name: 'Créer un nouveau fichier',
 			callback: async () => {
 				const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 				const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
 				this.createFile(templateNumber, parentFolder);
+				new Notice('Fichier créé !');
 			}
 		});
 
 		//Create a reference file and a final file
 		this.addCommand({
-			id : 'create-reference-file',
-			name : 'Create reference file',
+			id : 'enregistrer-un-fichier-de-référence',
+			name : 'Enregistrer un fichier de référence',
 			callback: async() => {
 				await comparaison();
 				new Notice('Fichier de référence créé !');
@@ -93,12 +63,22 @@ export default class MyPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id : 'synchronisation-redmine',
+			name : 'Synchronisation Redmine',
+			callback: async() => {
+				await redmineSync(this.settings.apiKey);
+				new Notice('Redmine Sync Done !');
+			},
+		})
+
+		/*
+		this.addCommand({
 			id : 'activate-navigator',
 			name : 'Activate navigator',
 			callback: () => {
 				this.activateView();
 			},		})
-
+		*/
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
@@ -208,5 +188,6 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
 }
 

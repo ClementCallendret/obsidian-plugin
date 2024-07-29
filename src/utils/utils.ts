@@ -243,7 +243,7 @@ export async function setupFolders() {
             if (children.name == "Saves") {
                 saves_folder_created = true;
             }
-            if (children.name == "Finals") {
+            if (children.name == "Comparaison") {
                 final_save_created = true;
             }
         }
@@ -255,7 +255,7 @@ export async function setupFolders() {
         await vault.createFolder("Saves");
     }
     if (!final_save_created) {
-        await vault.createFolder("Finals");
+        await vault.createFolder("Comparaison");
     }
 }
 
@@ -297,6 +297,7 @@ function removeSecondLineFromAllTables(markdownContent: string): string {
 //format data from Obsidian to Redmine
 export function formatDataObsidianToRedmine(data: string): string {
     data = removeSecondLineFromAllTables(data);
+    data = data.replace(/<br>/g, '');
     return data;
 }
 
@@ -315,4 +316,26 @@ export async function start(){
     if(!project_folder_created){
         await vault.createFolder("Projet");
     }
+}
+
+//order all files
+//NOTE : most of the time it's useless, obsidian do it for us. 
+export function orderSaveFiles(fileList :TFile []): TFile[] {
+    let filesOrdered : TFile[] = new Array(fileList.length);
+    for (const file of fileList){
+        let num : number = Number(getNumber(file.basename));
+        filesOrdered[num-1] = file;
+    }
+    return filesOrdered;
+}
+
+export async function orderNoteFiles(fileList :TFile []): Promise<TFile[]> {
+    let filesOrdered : TFile[] = new Array(fileList.length);
+    for (const file of fileList){
+        let num = await getIDFromFile(file);
+        if (num != null){
+            filesOrdered[num-1] = file;
+        }
+    }
+    return filesOrdered;
 }
