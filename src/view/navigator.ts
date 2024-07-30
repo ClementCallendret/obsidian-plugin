@@ -468,6 +468,18 @@ const children = [... parent_folder.children ];
         });
       });
 
+
+      menu.addItem((item) => {
+        item.setTitle("New Canva")
+        .setIcon("layout-dashboard")
+        .onClick(async () => {
+            const folder = app.vault.getAbstractFileByPath(filePath);
+            if (folder instanceof TFolder) {
+              await this.app.vault.create(`${folder.path}/New Canva.canvas`, `{ }`);
+            }
+        });
+      });
+
       menu.addItem((item) => {
         item.setTitle("New Folder")
         .setIcon("folder")
