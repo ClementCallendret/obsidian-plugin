@@ -1,4 +1,5 @@
 import { Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
+import { redmineSendImage } from "src/redmine/redmine";
 
 // Get ID from metadata
 export async function getIDFromFile(filepath: TFile) {
@@ -293,12 +294,73 @@ function removeSecondLineFromAllTables(markdownContent: string): string {
         return `${header}\n${rows}`;
     });
 }
+export interface formatData{
+    data: string;
+    uploads: uploadImage[];
+}
+export interface uploadImage {
+    token: string;
+    filename: string;
+    content_type: string;
+}
 
 //format data from Obsidian to Redmine
-export function formatDataObsidianToRedmine(data: string): string {
+export async function formatDataObsidianToRedmine(apiKey: string, data: string): Promise<formatData> {
     data = removeSecondLineFromAllTables(data);
     data = data.replace(/<br>/g, '');
-    return data;
+
+    // Extract images from the Markdown content
+    let imagesNameList = extractImagesFromMarkdown(data);
+    console.log("imageList",imagesNameList);
+    const uploads = await uploadImageListToRedmine(apiKey, imagesNameList);
+
+
+    data = transformImageReferences(data);
+    const response : formatData = {
+        data: data,
+        uploads: uploads
+    }
+    return response;
+}
+
+async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]): Promise<uploadImage[]> {
+    let uploads: uploadImage[] = [];
+    for (const imageName of imagesNameList) {
+        let image = app.vault.getAbstractFileByPath("Images/"+imageName);
+        console.log("image",image);
+        if (image != null){
+            let TFileImage :TFile = image as TFile;
+            let token = await redmineSendImage(apiKey, TFileImage);
+            console.log("token",token);
+            let upload: uploadImage = {
+                token: token,
+                filename: removeSpaces(imageName),
+                content_type: "image/"+TFileImage.extension
+            }
+            uploads.push(upload);
+        }
+    }
+    return uploads;
+}
+
+//extract images from markdown
+function extractImagesFromMarkdown(markdown: string): string[] {
+    const imageRegex = /\[\[(.*?)\]\]/g;
+    const images = [...markdown.matchAll(imageRegex)].map(match => match[1]);
+    return images;
+}
+
+//remove space from a string
+export function removeSpaces(input: string): string {
+    return input.replace(/\s+/g, '');
+  }
+
+
+function transformImageReferences(input: string): string {
+return input.replace(/!?\[\[(.*?)\]\]/g, (match, p1) => {
+    const imageName = p1.replace(/\s+/g, ''); // Supprime les espaces dans le nom de l'image
+    return `!${imageName}!`;
+});
 }
 
 export async function start(){

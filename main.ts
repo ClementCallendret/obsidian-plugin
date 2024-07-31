@@ -1,4 +1,4 @@
-import { Notice, Plugin,TAbstractFile, TFolder, WorkspaceLeaf } from 'obsidian';
+import { Notice, Plugin,TAbstractFile, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
 import { openTemplateModal } from './src/modal/templateModal';
@@ -8,6 +8,8 @@ import { comparaison  } from './src/hierarchy/hierarchy';
 import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber, start} from './src/utils/utils';
 import { redmineSync } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
+import { Content, convertCanvasToSVG } from 'src/redmine/canvaTosvg';
+import { convertSvgToPng } from 'src/redmine/canvaTopng';
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
@@ -34,6 +36,26 @@ export default class MyPlugin extends Plugin {
 		this.addRibbonIcon('folder-sync', 'Synchronisation Redmine', async (evt: MouseEvent) => {
 			await redmineSync(this.settings.apiKey);
 			new Notice('Redmine Sync Done !');
+		});
+
+		this.addRibbonIcon('folder-sync', 'TEST', async (evt: MouseEvent) => {
+			const file = this.app.vault.getAbstractFileByPath("Projet/New-Canva.canvas");
+			if (file != null) {
+				const data = await this.app.vault.read(file as TFile);
+				console.log("file",file);
+				console.log("data",data);	
+				const content: Content = JSON.parse(data);
+				console.log("content",content);
+				const svgData = convertCanvasToSVG(content);
+				//console.log("svgData",svgData);
+				await this.app.vault.create("test.svg",svgData);
+				console.log( this.app.vault.getMarkdownFiles());
+
+				const pngData = await convertSvgToPng("C:\Users\ccallendret\Documents\DeVault\DeVault\test.svg");
+				console.log("pngData",pngData);
+				//await this.app.vault.create("test.png",pngData); 
+				new Notice('TESTTT !');
+			}
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
@@ -191,4 +213,6 @@ export default class MyPlugin extends Plugin {
 	}
 
 }
+
+
 
