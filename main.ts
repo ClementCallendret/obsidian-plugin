@@ -9,7 +9,7 @@ import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber, start} from
 import { redmineSync } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
 import { Content, convertCanvasToSVG } from 'src/redmine/canvaTosvg';
-import { convertSvgToPng } from 'src/redmine/canvaTopng';
+import { test } from 'src/redmine/canvaTopng';
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
@@ -49,10 +49,10 @@ export default class MyPlugin extends Plugin {
 				const svgData = convertCanvasToSVG(content);
 				//console.log("svgData",svgData);
 				await this.app.vault.create("test.svg",svgData);
-				console.log( this.app.vault.getMarkdownFiles());
+				//console.log( this.app.vault.getMarkdownFiles());
 
-				const pngData = await convertSvgToPng("C:\Users\ccallendret\Documents\DeVault\DeVault\test.svg");
-				console.log("pngData",pngData);
+				const pngData = await test(this.app, svgData);
+				//console.log("pngData",pngData);
 				//await this.app.vault.create("test.png",pngData); 
 				new Notice('TESTTT !');
 			}

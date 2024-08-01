@@ -20,6 +20,7 @@ const context = await esbuild.context({
 	external: [
 		"obsidian",
 		"electron",
+		/*"sharp",*/
 		"@codemirror/autocomplete",
 		"@codemirror/collab",
 		"@codemirror/commands",
@@ -31,13 +32,15 @@ const context = await esbuild.context({
 		"@lezer/common",
 		"@lezer/highlight",
 		"@lezer/lr",
-		...builtins],
+		...builtins
+	],
 	format: "cjs",
 	target: "es2020",
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
 	outfile: "main.js",
+	platform: 'node',
 });
 
 if (prod) {

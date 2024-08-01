@@ -1,6 +1,6 @@
 import { stat } from 'fs';
 import { Upload } from 'lucide';
-import { Notice, requestUrl, RequestUrlParam, TFile } from 'obsidian';
+import { App, Notice, requestUrl, RequestUrlParam, TFile } from 'obsidian';
 import { openFileModal } from 'src/modal/fileModal';
 import { openRedmineProjectsModal } from 'src/modal/redmineProjectsModal';
 import {  formatDataObsidianToRedmine, getIDFromFile, getTitleNumber, orderNoteFiles, removeSpaces, splitMetadataAndContent } from 'src/utils/utils';
