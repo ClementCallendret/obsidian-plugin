@@ -48,6 +48,8 @@ export function convertCanvasToSVG(content: Content): string {
     let minY = 0;
     console.log("content"   ,content);
     console.log("nodes",nodes);
+    console.log("edges",edges);
+
     for (const node of nodes) {
         const nodeX = node.x;
         const nodeY = node.y;

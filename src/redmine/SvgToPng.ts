@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 import { marked } from 'marked';
-import { TFile } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import { Content, convertCanvasToSVG } from './CanvaToSvg';
 import { buffer } from 'stream/consumers';
 
@@ -74,6 +74,10 @@ async function convertSvgToPng(svgString: string, width: number, height: number)
 export async function convert(file: TFile): Promise<Buffer> {
     const data = await this.app.vault.read(file as TFile);
     const content: Content = JSON.parse(data);
+    if (content.nodes.length === 0) {
+        new Notice('Un canva ne contient pas de contenu.');
+        throw new Error('Un canva ne contient pas de contenu.');
+    }
     const svgData = convertCanvasToSVG(content);
 
     const pngDataUrl = await convertSvgToPng(svgData, 5000, 5000);

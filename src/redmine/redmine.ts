@@ -131,9 +131,8 @@ export async function redmineSendImage(apiKey: string, file:TFile):Promise<strin
     //In case internal server error, send again
     let body;
     if (file.extension == "canvas"){
-        console.log("cannvas")
         console.log(file);
-        body = convert(file);
+        body = await convert(file);
     }
     else{
         console.log("not canvas")

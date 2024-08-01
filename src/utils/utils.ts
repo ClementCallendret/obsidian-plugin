@@ -333,10 +333,17 @@ async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]
             let TFileImage :TFile = image as TFile;
             let token = await redmineSendImage(apiKey, TFileImage);
             console.log("token",token);
+            let extension;
+            if (TFileImage.extension == "canvas"){
+                extension = "png";
+            }
+            else{
+                extension = TFileImage.extension;
+            }
             let upload: uploadImage = {
                 token: token,
-                filename: removeSpaces(imageName),
-                content_type: "image/"+TFileImage.extension
+                filename: removeSpaces(getTextBeforePipe(imageName)),
+                content_type: "image/"+ extension
             }
             uploads.push(upload);
         }
