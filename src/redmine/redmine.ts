@@ -139,6 +139,7 @@ export async function redmineSendImage(apiKey: string, file:TFile):Promise<strin
         body = await this.app.vault.readBinary(file);
     }
     let response = {status: 500, json : {upload: {token: ""}}};
+    console.log("body",body);
     while (response.status != 201) {
         const requestParams: RequestUrlParam = {
             url: `https://ticket.iocean.fr/uploads.json?filename=${removeSpaces(file.basename)}`,

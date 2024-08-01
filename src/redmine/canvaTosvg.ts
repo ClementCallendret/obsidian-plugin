@@ -46,9 +46,6 @@ export function convertCanvasToSVG(content: Content): string {
     // Calculate view box position
     let minX = 0;
     let minY = 0;
-    console.log("content"   ,content);
-    console.log("nodes",nodes);
-    console.log("edges",edges);
 
     for (const node of nodes) {
         const nodeX = node.x;

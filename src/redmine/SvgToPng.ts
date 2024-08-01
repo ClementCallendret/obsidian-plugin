@@ -71,7 +71,7 @@ async function convertSvgToPng(svgString: string, width: number, height: number)
 }
 
 // Fonction pour convertir le canva en png 
-export async function convert(file: TFile): Promise<Buffer> {
+export async function convert(file: TFile): Promise<string> {
     const data = await this.app.vault.read(file as TFile);
     const content: Content = JSON.parse(data);
     if (content.nodes.length === 0) {
@@ -80,11 +80,17 @@ export async function convert(file: TFile): Promise<Buffer> {
     }
     const svgData = convertCanvasToSVG(content);
 
-    const pngDataUrl = await convertSvgToPng(svgData, 5000, 5000);
+    const pngDataUrl = await convertSvgToPng(svgData, 2000, 2000);
 
     // Convertir le Data URL en buffer binaire
     const base64Data = pngDataUrl.replace(/^data:image\/png;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    return buffer;
+    await this.app.vault.create('test'+file.basename+'.png', buffer);
+    const pngFile = this.app.vault.getAbstractFileByPath('test'+file.basename+'.png');
+    console.log("BEFORE readBinary");
+    const binary = await this.app.vault.readBinary(pngFile);
+    console.log("AFTER");
+
+    return binary;
 
 }

@@ -42,7 +42,6 @@ export default class MyPlugin extends Plugin {
 			const file = this.app.vault.getAbstractFileByPath("Projet/New-Canva.canvas");
 			if (file != null) {
 				const pngData = await convert(file as TFile);
-				await this.app.vault.create('test.png', pngData);
 				new Notice('TESTTT !');
 			}
 		});

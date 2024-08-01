@@ -317,10 +317,13 @@ export async function formatDataObsidianToRedmine(apiKey: string, data: string):
 
 
     data = transformImageReferences(data);
+    data = data.replace(/.canvas/g, '.png');
+
     const response : formatData = {
         data: data,
         uploads: uploads
     }
+    console.log("Uploads",uploads);
     return response;
 }
 
@@ -342,7 +345,7 @@ async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]
             }
             let upload: uploadImage = {
                 token: token,
-                filename: removeSpaces(getTextBeforePipe(imageName)),
+                filename: replaceCanvasWithPng(removeSpaces(getTextBeforePipe(imageName))),
                 content_type: "image/"+ extension
             }
             uploads.push(upload);
@@ -368,7 +371,16 @@ function getTextBeforePipe(input: string): string {
     }
 }
 
+function replaceCanvasWithPng(input: string): string {
+    const canvasExtension = '.canvas';
+    const pngExtension = '.png';
 
+    if (input.endsWith(canvasExtension)) {
+        return input.slice(0, -canvasExtension.length) + pngExtension;
+    }
+
+    return input;
+}
 //remove space from a string
 export function removeSpaces(input: string): string {
     return input.replace(/\s+/g, '');
@@ -378,7 +390,7 @@ export function removeSpaces(input: string): string {
 function transformImageReferences(input: string): string {
 return input.replace(/!?\[\[(.*?)\]\]/g, (match, p1) => {
     const imageName = p1.replace(/\s+/g, ''); // Supprime les espaces dans le nom de l'image
-    return `!${imageName}!`;
+    return `!${getTextBeforePipe(imageName)}!`;
 });
 }
 
