@@ -8,8 +8,8 @@ import { comparaison  } from './src/hierarchy/hierarchy';
 import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber, start} from './src/utils/utils';
 import { redmineSync } from 'src/redmine/redmine';
 import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
-import { Content, convertCanvasToSVG } from 'src/redmine/canvaTosvg';
-import { test } from 'src/redmine/canvaTopng';
+import { Content, convertCanvasToSVG } from 'src/redmine/CanvaToSvg';
+import { convert } from 'src/redmine/SvgToPng';
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;
@@ -41,19 +41,8 @@ export default class MyPlugin extends Plugin {
 		this.addRibbonIcon('folder-sync', 'TEST', async (evt: MouseEvent) => {
 			const file = this.app.vault.getAbstractFileByPath("Projet/New-Canva.canvas");
 			if (file != null) {
-				const data = await this.app.vault.read(file as TFile);
-				console.log("file",file);
-				console.log("data",data);	
-				const content: Content = JSON.parse(data);
-				console.log("content",content);
-				const svgData = convertCanvasToSVG(content);
-				//console.log("svgData",svgData);
-				await this.app.vault.create("test.svg",svgData);
-				//console.log( this.app.vault.getMarkdownFiles());
-
-				const pngData = await test(this.app, svgData);
-				//console.log("pngData",pngData);
-				//await this.app.vault.create("test.png",pngData); 
+				const pngData = await convert(file as TFile);
+				await this.app.vault.create('test.png', pngData);
 				new Notice('TESTTT !');
 			}
 		});

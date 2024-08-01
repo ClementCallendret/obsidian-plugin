@@ -4,6 +4,7 @@ import { App, Notice, requestUrl, RequestUrlParam, TFile } from 'obsidian';
 import { openFileModal } from 'src/modal/fileModal';
 import { openRedmineProjectsModal } from 'src/modal/redmineProjectsModal';
 import {  formatDataObsidianToRedmine, getIDFromFile, getTitleNumber, orderNoteFiles, removeSpaces, splitMetadataAndContent } from 'src/utils/utils';
+import { convert } from './SvgToPng';
 
 const fs = require('fs');
 
@@ -22,7 +23,7 @@ export async function getRedmineProject(apiKey: string) {
 export async function createIssue(apiKey: string, file: TFile, project_id: number) {
     // There is a bug with Redmine, sometimes we get "Internal Error"
     let response = {status: 500, json : {}};
-    const data = splitMetadataAndContent(await app.vault.read(file));
+    const data = splitMetadataAndContent(await this.app.vault.read(file));
     const title = await getIDFromFile(file) + " " + file.basename;
     const formatData = await formatDataObsidianToRedmine(apiKey,data.content)
     while(response.status != 201) {
@@ -54,7 +55,7 @@ export async function createIssue(apiKey: string, file: TFile, project_id: numbe
 export async function updateIssue(apiKey: string, file: TFile, issueId: number) {
     // There is a bug with Redmine, sometimes we get "Internal Error"
     let response = {status: 500, json : {}};
-    const data = splitMetadataAndContent(await app.vault.read(file));
+    const data = splitMetadataAndContent(await this.app.vault.read(file));
     const title = await getIDFromFile(file) + " " + file.basename;
     const formatData = await formatDataObsidianToRedmine(apiKey,data.content)
     while (response.status != 204) {
@@ -94,13 +95,13 @@ export async function redmineSync(apiKey: string) {
     //get all projects from redmine
     let projects = await getRedmineProject(apiKey);
     //select a project
-    let project = await openRedmineProjectsModal(app, projects);
+    let project = await openRedmineProjectsModal(this.app, projects);
     //get all issues from the selected project
     let issues = await getRedmineIssues(apiKey, project.id);
     //select files to be uploaded
-    let allFiles = app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
+    let allFiles = this.app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
     allFiles = await orderNoteFiles(allFiles);
-    let filesSelected = await openFileModal(app,allFiles);
+    let filesSelected = await openFileModal(this.app,allFiles);
 
     //get all id issue
     let idIssueList = [];
@@ -128,13 +129,23 @@ export async function redmineSync(apiKey: string) {
 
 export async function redmineSendImage(apiKey: string, file:TFile):Promise<string>{
     //In case internal server error, send again
+    let body;
+    if (file.extension == "canvas"){
+        console.log("cannvas")
+        console.log(file);
+        body = convert(file);
+    }
+    else{
+        console.log("not canvas")
+        body = await this.app.vault.readBinary(file);
+    }
     let response = {status: 500, json : {upload: {token: ""}}};
     while (response.status != 201) {
         const requestParams: RequestUrlParam = {
             url: `https://ticket.iocean.fr/uploads.json?filename=${removeSpaces(file.basename)}`,
             method: "POST",
             contentType: "application/octet-stream",
-            body: await app.vault.readBinary(file),
+            body: body,
             headers: {
                 "X-Redmine-API-Key": apiKey
             },

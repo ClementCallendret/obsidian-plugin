@@ -1,5 +1,6 @@
 import { Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 import { redmineSendImage } from "src/redmine/redmine";
+import { convert } from "src/redmine/SvgToPng";
 
 // Get ID from metadata
 export async function getIDFromFile(filepath: TFile) {
@@ -46,10 +47,10 @@ export async function deleteFolder(folder: TFolder) {
         if (child instanceof TFolder) {
             await deleteFolder(child);
         } else if (child instanceof TFile) {
-            await app.vault.trash(child, true);
+            await this.app.vault.trash(child, true);
         }
     }
-    await app.vault.trash(folder, true);
+    await this.app.vault.trash(folder, true);
 }
 
 // Rename all folders and their children
@@ -231,7 +232,7 @@ export function decrementLastNumber(title: string): string {
 
 //setup folders needed
 export async function setupFolders() {
-    let vault = app.vault;
+    let vault = this.app.vault;
     const root_folder = vault.getFolderByPath("/")?.children;
     let reference_folder_created = false;
     let saves_folder_created = false;
@@ -326,7 +327,7 @@ export async function formatDataObsidianToRedmine(apiKey: string, data: string):
 async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]): Promise<uploadImage[]> {
     let uploads: uploadImage[] = [];
     for (const imageName of imagesNameList) {
-        let image = app.vault.getAbstractFileByPath("Images/"+imageName);
+        let image = this.app.vault.getFiles().find(file => file.name == imageName);
         console.log("image",image);
         if (image != null){
             let TFileImage :TFile = image as TFile;
@@ -346,9 +347,20 @@ async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]
 //extract images from markdown
 function extractImagesFromMarkdown(markdown: string): string[] {
     const imageRegex = /\[\[(.*?)\]\]/g;
-    const images = [...markdown.matchAll(imageRegex)].map(match => match[1]);
+    const images = [...markdown.matchAll(imageRegex)].map(match =>getTextBeforePipe(match[1]));
     return images;
 }
+
+//when file inserted in a file and rename. ([[test.canvas|test]])
+function getTextBeforePipe(input: string): string {
+    const pipeIndex = input.indexOf('|');
+    if (pipeIndex === -1) {
+        return input;
+    } else {
+        return input.substring(0, pipeIndex);
+    }
+}
+
 
 //remove space from a string
 export function removeSpaces(input: string): string {
@@ -364,7 +376,7 @@ return input.replace(/!?\[\[(.*?)\]\]/g, (match, p1) => {
 }
 
 export async function start(){
-    let vault = app.vault;
+    let vault = this.app.vault;
     const root_folder_children = vault.getRoot().children;
     let project_folder_created = false;
     if (root_folder_children != null){
