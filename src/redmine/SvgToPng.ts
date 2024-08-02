@@ -80,17 +80,15 @@ export async function convert(file: TFile): Promise<string> {
     }
     const svgData = convertCanvasToSVG(content);
 
-    const pngDataUrl = await convertSvgToPng(svgData, 2000, 2000);
+    const pngDataUrl = await convertSvgToPng(svgData, 1000, 1000);
 
     // Convertir le Data URL en buffer binaire
     const base64Data = pngDataUrl.replace(/^data:image\/png;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    await this.app.vault.create('test'+file.basename+'.png', buffer);
-    const pngFile = this.app.vault.getAbstractFileByPath('test'+file.basename+'.png');
-    console.log("BEFORE readBinary");
+    await this.app.vault.create(file.basename+'.png', buffer);
+    const pngFile = this.app.vault.getAbstractFileByPath(file.basename+'.png');
     const binary = await this.app.vault.readBinary(pngFile);
-    console.log("AFTER");
-
+    await this.app.vault.delete(pngFile);
     return binary;
 
 }

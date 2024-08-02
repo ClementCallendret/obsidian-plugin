@@ -27,7 +27,6 @@ export async function createIssue(apiKey: string, file: TFile, project_id: numbe
     const title = await getIDFromFile(file) + " " + file.basename;
     const formatData = await formatDataObsidianToRedmine(apiKey,data.content)
     while(response.status != 201) {
-        console.log("formatData",formatData);
         const requestParams: RequestUrlParam = {
             url: "https://ticket.iocean.fr/issues.json",
             method: "POST",
@@ -131,15 +130,12 @@ export async function redmineSendImage(apiKey: string, file:TFile):Promise<strin
     //In case internal server error, send again
     let body;
     if (file.extension == "canvas"){
-        console.log(file);
         body = await convert(file);
     }
     else{
-        console.log("not canvas")
         body = await this.app.vault.readBinary(file);
     }
     let response = {status: 500, json : {upload: {token: ""}}};
-    console.log("body",body);
     while (response.status != 201) {
         const requestParams: RequestUrlParam = {
             url: `https://ticket.iocean.fr/uploads.json?filename=${removeSpaces(file.basename)}`,
@@ -151,7 +147,6 @@ export async function redmineSendImage(apiKey: string, file:TFile):Promise<strin
             },
         };
         response = await requestUrl(requestParams);
-        console.log(response);
     }
     return response.json.upload.token;
 }
