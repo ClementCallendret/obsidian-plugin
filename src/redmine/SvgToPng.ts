@@ -2,7 +2,6 @@ import puppeteer from 'puppeteer';
 import { marked } from 'marked';
 import { Notice, TFile } from 'obsidian';
 import { Content, convertCanvasToSVG } from './CanvaToSvg';
-import { buffer } from 'stream/consumers';
 
 // Fonction pour convertir Markdown en HTML
 async function convertMarkdownToHtml(markdown: string): Promise<string> {

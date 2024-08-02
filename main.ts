@@ -2,14 +2,11 @@ import { Notice, Plugin,TAbstractFile, TFile, TFolder, WorkspaceLeaf } from 'obs
 import { ExampleView, VIEW_TYPE_EXAMPLE } from './src/view/navigator';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from './src/settings/setting';
 import { openTemplateModal } from './src/modal/templateModal';
-import {openFileModal} from './src/modal/fileModal'
 
 import { comparaison  } from './src/hierarchy/hierarchy';
-import { setupFolders, getNextNumber, getIDFromFile ,getTitleNumber, start} from './src/utils/utils';
+import { setupFolders, getNextNumber, start} from './src/utils/utils';
 import { redmineSync } from 'src/redmine/redmine';
-import {openRedmineProjectsModal} from 'src/modal/redmineProjectsModal';
-import { Content, convertCanvasToSVG } from 'src/redmine/CanvaToSvg';
-import { convert } from 'src/redmine/SvgToPng';
+
 
 export default class MyPlugin extends Plugin {
 	public settings: MyPluginSettings;

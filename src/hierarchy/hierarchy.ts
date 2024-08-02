@@ -1,8 +1,7 @@
-import * as Diff from 'diff';
 import { markdownDiff } from 'markdown-diff';
 
 //import { Document, Packer, Paragraph, Tab, TextRun } from 'docx';
-import {TFolder, Notice, TFile} from 'obsidian';
+import {TFolder, TFile} from 'obsidian';
 import {setupFolders, getIDFromFile, getNextNumber, orderSaveFiles } from '../utils/utils';
 import { openComparaisonModal } from 'src/modal/comparaisonModal';
 
@@ -19,25 +18,25 @@ export async function comparaison(){
     //Comparaison possible
     if (savesFiles != undefined && savesFiles.length >= 2){
         savesFiles = orderSaveFiles(savesFiles);
-        let LastAndPrevious = await openComparaisonModal(app,savesFiles)
+        let LastAndPrevious = await openComparaisonModal(this.app,savesFiles)
 
         //On lit les fichiers
-        let last_file_data = await app.vault.read(LastAndPrevious[0] as TFile);
-        let previous_file_data = await app.vault.read(LastAndPrevious[1] as TFile);
+        let last_file_data = await this.app.vault.read(LastAndPrevious[0] as TFile);
+        let previous_file_data = await this.app.vault.read(LastAndPrevious[1] as TFile);
     
         //On compare les fichiers
         let final_data = compareFilesData(previous_file_data, last_file_data);
         
         //On crée le fichier final
-        const parent_folder = app.vault.getFolderByPath("Références");
+        const parent_folder = this.app.vault.getFolderByPath("Références");
         let digits = 0;
         if (parent_folder != null) {
             digits = +await getNextNumber(parent_folder);
         }
         
         
-        await app.vault.create(`Comparaison/${digits - 1} Comparaison.md`, final_data);
-        await app.workspace.openLinkText(``,`Comparaison/${digits - 1} Comparaison.md`, true);
+        await this.app.vault.create(`Comparaison/${digits - 1} Comparaison.md`, final_data);
+        await this.app.workspace.openLinkText(``,`Comparaison/${digits - 1} Comparaison.md`, true);
     
         //ouvrir en mode view
         const leaf = this.app.workspace.activeLeaf;
@@ -119,7 +118,7 @@ export async function concatenateAllNotes() {
         }
     }
     //Récupérer le prochain nombre
-    const parent_folder = app.vault.getFolderByPath("Références");
+    const parent_folder = this.app.vault.getFolderByPath("Références");
     let digits = 0;
     if (parent_folder != null) {
         digits = +await getNextNumber(parent_folder);
@@ -231,7 +230,7 @@ export function replaceHtmlTags(input: string): string {
 //get all files from the "Saves" files
 function getSavesFiles() : TFile[] | undefined {
     let savesFolder: TFolder | null = null;
-    const root = app.vault.getRoot();
+    const root = this.app.vault.getRoot();
     
     // On récupère le chemin du dossier Saves
     for (const child of root.children) {

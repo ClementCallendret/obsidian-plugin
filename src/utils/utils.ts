@@ -1,6 +1,5 @@
-import { Menu, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import { TFile, TFolder } from "obsidian";
 import { redmineSendImage } from "src/redmine/redmine";
-import { convert } from "src/redmine/SvgToPng";
 
 // Get ID from metadata
 export async function getIDFromFile(filepath: TFile) {

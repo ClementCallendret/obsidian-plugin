@@ -419,12 +419,12 @@ const children = [... parent_folder.children ];
             item.setTitle("Rename")
             .setIcon("pencil")
             .onClick(async () => {
-                const file = app.vault.getAbstractFileByPath(filePath);
+                const file = this.app.vault.getAbstractFileByPath(filePath);
                 if (file instanceof TFile) {
                     const newName = await promptForNewName(file.name);
                     if (newName) {
                         const newFilePath = `${file.parent?.path}/${newName}`;
-                        await app.vault.rename(file, newFilePath);
+                        await this.app.vault.rename(file, newFilePath);
                         await this.updateFileList();
                         new Notice(`Renamed to ${newName}`);
                     }
@@ -436,12 +436,12 @@ const children = [... parent_folder.children ];
           item.setTitle("Delete")
           .setIcon("trash")
           .onClick(async () => {
-              const file = app.vault.getAbstractFileByPath(filePath);
+              const file = this.app.vault.getAbstractFileByPath(filePath);
               if (file instanceof TFile && file.parent != null) {
                   const file_parent = { ...file.parent };
                   const file_name = file.name + "";
                   let isMarkdown = file.extension == "md";
-                  await app.vault.trash(file, true);
+                  await this.app.vault.trash(file, true);
                   if (isMarkdown) {
                       await renameFolderChildren(file_parent as TFolder, -(getLastNumber(file_name)));
                   }
@@ -460,7 +460,7 @@ const children = [... parent_folder.children ];
         item.setTitle("New File")
         .setIcon("file")
         .onClick(async () => {
-            const folder = app.vault.getAbstractFileByPath(filePath);
+            const folder = this.app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
               const templateNumber = await openTemplateModal(this.app, this.MyPlugin.settings.templates);
               await this.MyPlugin.createFile(templateNumber,folder)
@@ -475,7 +475,7 @@ const children = [... parent_folder.children ];
         item.setTitle("New Canva")
         .setIcon("layout-dashboard")
         .onClick(async () => {
-            const folder = app.vault.getAbstractFileByPath(filePath);
+            const folder = this.app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
               const digits = await getNextNumber(folder);
               await this.app.vault.create(`${folder.path}/${digits} New Canva${digits}.canvas`, `{ }`);
@@ -489,14 +489,14 @@ const children = [... parent_folder.children ];
         item.setTitle("New Folder")
         .setIcon("folder")
         .onClick(async () => {
-            const folder = app.vault.getAbstractFileByPath(filePath);
+            const folder = this.app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
               const number = await getNextNumber(folder);
-              const newFolder = await app.vault.createFolder(`${folder.path}/${number} New Folder`);
+              const newFolder = await this.app.vault.createFolder(`${folder.path}/${number} New Folder`);
               new Notice(`Created new folder ${newFolder.name}`);
               const id = this.MyPlugin.getID() +1;
               const metadata = `---\nid: ${id}\n---\n`;		
-              await app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
+              await this.app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
               this.MyPlugin.setID(id);
               await this.updateFileList();
             }
@@ -507,13 +507,13 @@ const children = [... parent_folder.children ];
             item.setTitle("Rename")
             .setIcon("pencil")
             .onClick(async () => {
-                const folder = app.vault.getAbstractFileByPath(filePath);
+                const folder = this.app.vault.getAbstractFileByPath(filePath);
                 if (folder instanceof TFolder) {
                     const newName = await promptForNewName(folder.name);
                     if (newName) {
                         const newFolderPath = `${folder.parent?.path}/${newName}`;
                         folder_expand.delete(folder);
-                        await app.vault.rename(folder, newFolderPath);
+                        await this.app.vault.rename(folder, newFolderPath);
                         await this.updateFileList();
                         new Notice(`Renamed to ${newName}`);
                     }
@@ -525,7 +525,7 @@ const children = [... parent_folder.children ];
           item.setTitle("Delete")
           .setIcon("trash")
           .onClick(async () => {
-              const folder = app.vault.getAbstractFileByPath(filePath);
+              const folder = this.app.vault.getAbstractFileByPath(filePath);
               if (folder instanceof TFolder && folder.parent != null) {
                   const folder_parent = { ...folder.parent };
                   const folder_name = folder.name + "";
