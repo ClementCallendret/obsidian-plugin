@@ -63,7 +63,7 @@ export default class MyPlugin extends Plugin {
 
 		this.addCommand({
 			id : 'synchronisation-redmine',
-			name : 'Synchronisation Redmine',
+			name : 'Synchronisation Redmine            ',
 			callback: async() => {
 				await redmineSync(this.settings.apiKey);
 				new Notice('Redmine Sync Done !');
