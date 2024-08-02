@@ -235,10 +235,10 @@ export function decrementLastNumber(title: string): string {
 //setup folders needed
 export async function setupFolders() {
     let vault = this.app.vault;
-    const root_folder = vault.getFolderByPath("/")?.children;
+    const root_folder = await vault.getFolderByPath("/")?.children;
     let reference_folder_created = false;
     let saves_folder_created = false;
-    let final_save_created = false;
+    let comparaison_save_created = false;
     if (root_folder != null) {
         for (const children of root_folder) {
             if (children.name == "Références") {
@@ -247,8 +247,8 @@ export async function setupFolders() {
             if (children.name == "Saves") {
                 saves_folder_created = true;
             }
-            if (children.name == "Comparaison") {
-                final_save_created = true;
+            if (children.name == "Comparaisons") {
+                comparaison_save_created = true;
             }
         }
     }
@@ -258,8 +258,8 @@ export async function setupFolders() {
     if (!saves_folder_created) {
         await vault.createFolder("Saves");
     }
-    if (!final_save_created) {
-        await vault.createFolder("Comparaison");
+    if (!comparaison_save_created) {
+        await vault.createFolder("Comparaisons");
     }
 }
 
@@ -394,7 +394,7 @@ return input.replace(/!?\[\[(.*?)\]\]/g, (match, p1) => {
 
 export async function start(){
     let vault = this.app.vault;
-    const root_folder_children = vault.getRoot().children;
+    const root_folder_children = await vault.getRoot().children;
     let project_folder_created = false;
     if (root_folder_children != null){
         for (const children of root_folder_children) {

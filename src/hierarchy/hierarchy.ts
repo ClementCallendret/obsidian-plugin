@@ -9,7 +9,7 @@ import { openComparaisonModal } from 'src/modal/comparaisonModal';
 //Comparer les fichiers
 export async function comparaison(){
     //Création des dossiers
-    await setupFolders();
+    //await setupFolders();
 
     //creation du fichier de référence et de sa version pour la comparaison
     await concatenateAllNotes();
@@ -35,8 +35,8 @@ export async function comparaison(){
         }
         
         
-        await this.app.vault.create(`Comparaison/${digits - 1} Comparaison.md`, final_data);
-        await this.app.workspace.openLinkText(``,`Comparaison/${digits - 1} Comparaison.md`, true);
+        await this.app.vault.create(`Comparaisons/${digits - 1} Comparaison.md`, final_data);
+        await this.app.workspace.openLinkText(``,`Comparaisons/${digits - 1} Comparaison.md`, true);
     
         //ouvrir en mode view
         const leaf = this.app.workspace.activeLeaf;
@@ -102,7 +102,7 @@ export async function concatenateAllNotes() {
     let id_list  = [];
 
     for (const file of files){
-        if (!file.path.startsWith('Références') && !file.path.startsWith('Saves') && !file.path.startsWith('Comparaison')) {
+        if (!file.path.startsWith('Références') && !file.path.startsWith('Saves') && !file.path.startsWith('Comparaisons')) {
             let data = await vault.read(file);
             let match = data.match(/---\n(?:.|\n)*\n---\n([\s\S]*)/);
             let data_wt_meta = match ? match[1] : null;

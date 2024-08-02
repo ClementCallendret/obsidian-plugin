@@ -111,12 +111,13 @@ export default class MyPlugin extends Plugin {
 			(leaf) => new ExampleView(leaf, this)
 		  );
         
-        this.app.workspace.onLayoutReady(() => {
+        this.app.workspace.onLayoutReady(async () => {
             // Le chargement initial est terminé
             this.initial_load = false;
-			start();
-			setupFolders();
-			this.activateView();
+			await start();
+			await setupFolders();
+			await this.activateView();
+			await this.updateExampleView();
 			console.log("Load Fileflow plugin");
         });
  
@@ -180,6 +181,7 @@ export default class MyPlugin extends Plugin {
 	async updateExampleView() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
         if (leaves.length > 0) {
+			console.log("update file list");
             const view = leaves[0].view as ExampleView;
             await view.updateFileList();
         }
