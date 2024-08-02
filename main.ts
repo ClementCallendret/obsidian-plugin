@@ -17,7 +17,11 @@ export default class MyPlugin extends Plugin {
 
 		// This creates an icon in the left ribbon.
 
-		
+		this.addRibbonIcon('file-check', 'Comparaison', async (evt: MouseEvent) => {
+			comparaison();
+			new Notice('Comparaison !');
+		});
+
 		this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
 			const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
@@ -25,11 +29,6 @@ export default class MyPlugin extends Plugin {
 			new Notice('Fichier créé !');
 		});
 		
-		this.addRibbonIcon('file-check', 'Enregistrer un fichier de référence', async (evt: MouseEvent) => {
-			comparaison();
-			new Notice('Fichier de référence créé !');
-		});
-
 		this.addRibbonIcon('folder-sync', 'Synchronisation Redmine', async (evt: MouseEvent) => {
 			await redmineSync(this.settings.apiKey);
 			new Notice('Redmine Sync Done !');
@@ -38,6 +37,17 @@ export default class MyPlugin extends Plugin {
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		//const statusBarItemEl = this.addStatusBarItem();
 		//statusBarItemEl.setText('Status Bar Text');
+
+
+		//Create a reference file and a compare file
+		this.addCommand({
+			id : 'Comparaison',
+			name : 'Comparaison',
+			callback: async() => {
+				await comparaison();
+				new Notice('Fichier de référence créé !');
+			},
+		});
 
 		//Choose a template and create a file 
 		this.addCommand({
@@ -51,19 +61,12 @@ export default class MyPlugin extends Plugin {
 			}
 		});
 
-		//Create a reference file and a final file
-		this.addCommand({
-			id : 'enregistrer-un-fichier-de-référence',
-			name : 'Enregistrer un fichier de référence',
-			callback: async() => {
-				await comparaison();
-				new Notice('Fichier de référence créé !');
-			},
-		});
-
+		//Synchronize the redmine tasks
 		this.addCommand({
 			id : 'synchronisation-redmine',
-			name : 'Synchronisation Redmine            ',
+			//there is space at the end of the name to make it the longer and appear at the bottom of the list
+			//so it's alphabetical order
+			name : 'Synchronisation Redmine ',
 			callback: async() => {
 				await redmineSync(this.settings.apiKey);
 				new Notice('Redmine Sync Done !');
