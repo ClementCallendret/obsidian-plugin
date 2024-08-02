@@ -464,6 +464,8 @@ const children = [... parent_folder.children ];
             if (folder instanceof TFolder) {
               const templateNumber = await openTemplateModal(this.app, this.MyPlugin.settings.templates);
               await this.MyPlugin.createFile(templateNumber,folder)
+              await this.updateFileList();
+              new Notice(`Created new file`);
             }
         });
       });
@@ -475,7 +477,10 @@ const children = [... parent_folder.children ];
         .onClick(async () => {
             const folder = app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
-              await this.app.vault.create(`${folder.path}/New Canva.canvas`, `{ }`);
+              const digits = await getNextNumber(folder);
+              await this.app.vault.create(`${folder.path}/${digits} New Canva${digits}.canvas`, `{ }`);
+              await this.updateFileList();
+              new Notice(`Created new canva`);
             }
         });
       });

@@ -1,4 +1,4 @@
-import { Menu, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
+import { Menu, Notice, TAbstractFile, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import { redmineSendImage } from "src/redmine/redmine";
 import { convert } from "src/redmine/SvgToPng";
 
@@ -30,15 +30,18 @@ export async function getNextNumber(parent_folder: TFolder): Promise<string> {
 // Check if file is already open: yes -> return file leaf | no -> return null
 export function fileAlreadyOpen(filePath: string) {
     const { workspace } = this.app;
-    const openLeaves = workspace.getLeavesOfType('markdown');
-    for (const leaf of openLeaves) {
-        const viewState = leaf.getViewState();
-        if (viewState.state.file === filePath) {
-            return leaf;
+    let foundLeaf = null;
+    // this function use callback so you can't return the value directly
+    workspace.iterateAllLeaves(leaf => {
+        const file = leaf.view.file;
+        if (file && file.path === filePath) {
+            foundLeaf = leaf;
         }
-    }
-    return null;
+    });
+
+    return foundLeaf;
 }
+
 
 // Delete a folder and all its children
 export async function deleteFolder(folder: TFolder) {
@@ -312,7 +315,6 @@ export async function formatDataObsidianToRedmine(apiKey: string, data: string):
 
     // Extract images from the Markdown content
     let imagesNameList = extractImagesFromMarkdown(data);
-    console.log("imageList",imagesNameList);
     const uploads = await uploadImageListToRedmine(apiKey, imagesNameList);
 
 
@@ -323,7 +325,6 @@ export async function formatDataObsidianToRedmine(apiKey: string, data: string):
         data: data,
         uploads: uploads
     }
-    console.log("Uploads",uploads);
     return response;
 }
 
@@ -331,11 +332,9 @@ async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]
     let uploads: uploadImage[] = [];
     for (const imageName of imagesNameList) {
         let image = this.app.vault.getFiles().find(file => file.name == imageName);
-        console.log("image",image);
         if (image != null){
             let TFileImage :TFile = image as TFile;
             let token = await redmineSendImage(apiKey, TFileImage);
-            console.log("token",token);
             let extension;
             if (TFileImage.extension == "canvas"){
                 extension = "png";

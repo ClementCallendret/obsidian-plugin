@@ -38,14 +38,6 @@ export default class MyPlugin extends Plugin {
 			new Notice('Redmine Sync Done !');
 		});
 
-		this.addRibbonIcon('folder-sync', 'TEST', async (evt: MouseEvent) => {
-			const file = this.app.vault.getAbstractFileByPath("Projet/New-Canva.canvas");
-			if (file != null) {
-				const pngData = await convert(file as TFile);
-				new Notice('TESTTT !');
-			}
-		});
-
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		//const statusBarItemEl = this.addStatusBarItem();
 		//statusBarItemEl.setText('Status Bar Text');
@@ -98,7 +90,7 @@ export default class MyPlugin extends Plugin {
         this.registerEvent(
             this.app.vault.on('create', async (file: TAbstractFile) => {
                 if (!this.initial_load) {
-					await this.updateExampleView();
+					//await this.updateExampleView();
                 }
             })
         );
