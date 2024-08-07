@@ -478,7 +478,9 @@ const children = [... parent_folder.children ];
             const folder = this.app.vault.getAbstractFileByPath(filePath);
             if (folder instanceof TFolder) {
               const digits = await getNextNumber(folder);
-              await this.app.vault.create(`${folder.path}/${digits} New Canva${digits}.canvas`, `{ }`);
+              const path = `${folder.path}/${digits} New Canva${digits}.canvas`;
+              await this.app.vault.create(path, `{ }`);
+              await this.app.workspace.openLinkText(path, '', true);
               await this.updateFileList();
               new Notice(`Created new canva`);
             }
