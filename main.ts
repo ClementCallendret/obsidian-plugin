@@ -19,13 +19,15 @@ export default class MyPlugin extends Plugin {
 
 		this.addRibbonIcon('file-check', 'Comparaison', async (evt: MouseEvent) => {
 			comparaison();
+			await this.updateExampleView();
 			new Notice('Comparaison !');
 		});
 
 		this.addRibbonIcon('file-plus', 'Créer un nouveau fichier', async (evt: MouseEvent) => {
 			const templateNumber = await openTemplateModal(this.app, this.settings.templates);
 			const parentFolder = this.app.workspace.getActiveFile()?.parent as TFolder;
-			this.createFile(templateNumber,parentFolder);
+			await this.createFile(templateNumber,parentFolder);
+			await this.updateExampleView();
 			new Notice('Fichier créé !');
 		});
 		
