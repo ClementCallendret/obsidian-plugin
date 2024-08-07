@@ -273,7 +273,7 @@ function renderNode(node: Node): string {
     let textOffsetX = 15;
     let textOffsetY = 0;
     let fontColor = '#2c2d2c';
-    let fontSize = 15;
+    let fontSize = 15; 
     let content = '';
 
     // Render default text
