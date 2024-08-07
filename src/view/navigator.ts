@@ -496,7 +496,7 @@ const children = [... parent_folder.children ];
               new Notice(`Created new folder ${newFolder.name}`);
               const id = this.MyPlugin.getID() +1;
               const metadata = `---\nid: ${id}\n---\n`;		
-              await this.app.vault.create(`${newFolder.path}/${number}.0 Notes.md`, metadata);
+              await this.app.vault.create(`${newFolder.path}/${number}.0 Note.md`, metadata);
               this.MyPlugin.setID(id);
               await this.updateFileList();
             }

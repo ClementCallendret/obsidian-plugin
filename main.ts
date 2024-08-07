@@ -139,7 +139,7 @@ export default class MyPlugin extends Plugin {
 		if (folder != null){
 			const digits = await getNextNumber(folder);
 			
-			const newFilePath = `${folder.path}/${digits} Titre${digits}.md`;
+			const newFilePath = `${folder.path}/${digits} New Note${digits}.md`;
 			const id = this.getID()+1;
 			const metadata = `---\nid: ${id}\n---\n`;		
 		
