@@ -1,7 +1,7 @@
 {
 	"id": "file-flow",
 	"name": "FileFlow",
-	"version": "0.5.0",
+	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "FileFlow is a versatile plugin for Obsidian that enhances your note-taking and project management capabilities. It features an intuitive file manager, automatic file hierarchization. Track changes with ease using advanced version comparison, and integrate seamlessly with RedMine for effective ticket management. Simplify your workflow and stay organized with FileFlow.",
 	"author": "IOcean",
