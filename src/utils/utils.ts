@@ -388,7 +388,7 @@ export function removeSpaces(input: string): string {
 function transformImageReferences(input: string): string {
 return input.replace(/!?\[\[(.*?)\]\]/g, (match, p1) => {
     const imageName = p1.replace(/\s+/g, ''); // Supprime les espaces dans le nom de l'image
-    return `!${getTextBeforePipe(imageName)}!`;
+    return ` !${getTextBeforePipe(imageName)}!`;
 });
 }
 
