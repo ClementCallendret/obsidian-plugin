@@ -96,12 +96,14 @@ export async function redmineSync(apiKey: string) {
     //get all issues from the selected project
     let issues = await getRedmineIssues(apiKey, project.id);
     //select files to be uploaded
-    let allFiles = this.app.vault.getMarkdownFiles().filter(file => file.path.startsWith("Projet/")).reverse();
+    let allFiles = this.app.vault.getMarkdownFiles()
+        .filter((file : TFile) => file.path.startsWith("Projet/"))
+        .reverse();
     allFiles = await orderNoteFiles(allFiles);
     let filesSelected = await openFileModal(this.app,allFiles);
 
     //get all id issue
-    let idIssueList = [];
+    let idIssueList : number[] = [];
     for (const issue of issues) {
         const idIssue = getTitleNumber(issue.subject);
         if (idIssue != null){

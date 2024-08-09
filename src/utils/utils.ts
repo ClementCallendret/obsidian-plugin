@@ -1,4 +1,4 @@
-import { TFile, TFolder } from "obsidian";
+import { TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import { redmineSendImage } from "src/redmine/redmine";
 
 // Get ID from metadata
@@ -31,10 +31,12 @@ export function fileAlreadyOpen(filePath: string) {
     const { workspace } = this.app;
     let foundLeaf = null;
     // this function use callback so you can't return the value directly
-    workspace.iterateAllLeaves(leaf => {
-        const file = leaf.view.file;
-        if (file && file.path === filePath) {
-            foundLeaf = leaf;
+    workspace.iterateAllLeaves((leaf : WorkspaceLeaf) => {
+        if ('file' in (leaf.view as any)) {
+            const file = (leaf.view as any).file;
+            if (file && file.path === filePath) {
+                foundLeaf = leaf;
+            }
         }
     });
 
@@ -330,7 +332,7 @@ export async function formatDataObsidianToRedmine(apiKey: string, data: string):
 async function uploadImageListToRedmine(apiKey: string, imagesNameList: string[]): Promise<uploadImage[]> {
     let uploads: uploadImage[] = [];
     for (const imageName of imagesNameList) {
-        let image = this.app.vault.getFiles().find(file => file.name == imageName);
+        let image = this.app.vault.getFiles().find((file : TFile) => file.name == imageName);
         if (image != null){
             let TFileImage :TFile = image as TFile;
             let token = await redmineSendImage(apiKey, TFileImage);

@@ -185,7 +185,6 @@ export default class MyPlugin extends Plugin {
 	async updateExampleView() {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
         if (leaves.length > 0) {
-			console.log("update file list");
             const view = leaves[0].view as ExampleView;
             await view.updateFileList();
         }

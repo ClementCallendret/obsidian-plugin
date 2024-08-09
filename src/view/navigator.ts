@@ -451,7 +451,7 @@ const children = [... parent_folder.children ];
           });
 
           // Ajouter la classe personnalisée pour rendre le titre et l'icône en rouge
-          item.dom.classList.add('context-menu-delete-red');
+          (item as any).dom.classList.add('context-menu-delete-red');
       });
     } 
     else if (type === "folder") {
@@ -538,8 +538,8 @@ const children = [... parent_folder.children ];
               }
           });
           // Ajouter la classe personnalisée pour rendre le titre et l'icône en rouge
-          item.dom.classList.add('context-menu-delete-red');
-      });
+          (item as any).dom.classList.add('context-menu-delete-red');
+        });
     }
     menu.showAtMouseEvent(event);
   }
